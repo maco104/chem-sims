@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Equilibrium Snowball Fight</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: match picker, scoreboard over the field, run controls, disturb buttons, then the round log and the graph */
+:root{
+  --bg:#eaf0f5; --surface:#ffffff; --ink:#15202b; --muted:#566473; --line:#c9d4de;
+  --react:#2c69aa; --prod:#bf4f2a;
+  --fieldR:#e1ebf5; --fieldP:#f7e8e1; --ball:#ffffff; --ballEdge:#8fa0b1; --shadow:rgba(30,45,60,.18);
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d131a; --surface:#151d27; --ink:#e4ebf2; --muted:#93a1b0; --line:#2a3645;
+  --react:#6ea9e6; --prod:#ec8a63;
+  --fieldR:#162539; --fieldP:#2d1d18; --ball:#f2f6fa; --ballEdge:#b9c7d4; --shadow:rgba(0,0,0,.45); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d131a; --surface:#151d27; --ink:#e4ebf2; --muted:#93a1b0; --line:#2a3645;
+  --react:#6ea9e6; --prod:#ec8a63;
+  --fieldR:#162539; --fieldP:#2d1d18; --ball:#f2f6fa; --ballEdge:#b9c7d4; --shadow:rgba(0,0,0,.45); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1;margin:0;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.lbl{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--muted)}
+
+.board{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.score,.clock{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.score.r{border-top:4px solid var(--react)} .score.p{border-top:4px solid var(--prod);text-align:right;align-items:flex-end}
+.num{font-family:var(--display);font-weight:700;font-size:clamp(40px,8vw,64px);line-height:1;font-variant-numeric:tabular-nums}
+.score.r .num{color:var(--react)} .score.p .num{color:var(--prod)}
+.rate{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.clock{align-items:center;justify-content:center;text-align:center;width:130px}
+.clock .t{font-family:var(--display);font-weight:700;font-size:clamp(32px,6vw,44px);line-height:1;font-variant-numeric:tabular-nums}
+.clock .status{font-size:12px;color:var(--muted);text-wrap:balance}
+
+#field{width:100%;aspect-ratio:900/380;max-width:100%;display:block;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font-family:var(--body);font-size:14px;font-weight:700;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--react);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);min-width:96px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:8px 11px;font-family:var(--mono);font-weight:500;font-size:13px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.spacer{flex:1}
+
+fieldset{margin:0;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface);display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{padding:0 4px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btns button{padding:7px 10px;font-size:13px}
+.note{font-size:13px;color:var(--muted);margin:0}
+
+.presets{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.presets button{font-weight:400;font-size:13px}
+.presets button b{font-family:var(--mono);font-weight:500}
+.presets button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:18px;margin:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.chart{width:100%;height:260px;display:block}
+
+.log{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.tablewrap{max-height:300px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+th{position:sticky;top:0;background:var(--surface);text-align:right;font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px}
+th:first-child,td:first-child{text-align:left}
+td.r{color:var(--react)} td.p{color:var(--prod)}
+tr.change td{font-style:italic;background:var(--bg)}
+tr.change td:first-child{font-family:var(--body);font-size:12px}
+@media (max-width:600px){#field{aspect-ratio:380/500} header p{font-size:14px}}
+@media (max-width:480px){.board{gap:6px}.clock{min-width:0;width:92px;padding:8px 6px}.score{padding:8px 10px}.rate{font-size:11px}}
+</style>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Equilibrium Snowball Fight</h1>
+    <p>Two teams throw snowballs across the line. Each team tries to keep its own side clear. The fight pauses after every 5-second round so you can write down the counts.</p>
+  </header>
+
+  <div class="presets" role="group" aria-label="Match">
+    <span class="lbl">Match</span>
+    <button data-preset="10,10" aria-pressed="true">Even teams <b>10 v 10</b></button>
+    <button data-preset="4,16" aria-pressed="false">Few on reactant side <b>4 v 16</b></button>
+    <button data-preset="16,4" aria-pressed="false">Few on product side <b>16 v 4</b></button>
+  </div>
+
+  <section class="board">
+    <div class="score r"><span class="lbl">Reactant side</span><span class="num" id="cR">80</span><span class="rate" id="rF">0.0 throws/s</span></div>
+    <div class="clock"><span class="lbl">Round</span><span class="t" id="roundNum">0</span><span class="status" id="status">Press Start</span></div>
+    <div class="score p"><span class="lbl">Product side</span><span class="num" id="cP">0</span><span class="rate" id="rR">0.0 throws/s</span></div>
+  </section>
+
+  <canvas id="field" aria-label="Snowball fight field: reactant side and product side"></canvas>
+
+  <div class="actions">
+    <button class="primary" id="play">Start</button>
+    <button id="reset">Start this match over</button>
+    <span class="spacer"></span>
+    <span class="lbl">Speed</span>
+    <div class="seg" id="speed">
+      <button data-s="1" aria-pressed="true">1×</button>
+      <button data-s="2" aria-pressed="false">2×</button>
+    </div>
+  </div>
+
+  <fieldset class="disturb">
+    <legend class="lbl">Disturb the equilibrium</legend>
+    <div class="btns">
+      <button id="addR">+50 to reactant side</button>
+      <button id="addP">+50 to product side</button>
+      <button id="remR">−50 from reactant side</button>
+      <button id="remP">−50 from product side</button>
+    </div>
+    <p class="note">These work while the fight is paused. Each change is added to the round log.</p>
+  </fieldset>
+
+  <section class="log">
+    <div class="panel">
+      <h2>Round log</h2>
+      <div class="tablewrap" id="tw">
+        <table><thead><tr><th>Round</th><th>Reactant side</th><th>Product side</th></tr></thead><tbody id="tbody"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="charts">
+    <div class="panel">
+      <h2>Snowballs per round</h2>
+      <div class="legend"><span><i style="background:var(--react)"></i>Reactant side</span><span><i style="background:var(--prod)"></i>Product side</span></div>
+      <canvas class="chart" id="chartN"></canvas>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const W=900,H=380,MID=W/2,M=16;
+const SPEED=170, WIND=0.2, RECOVER=0.1, RATE_WIN=4, ROUND=5, TOTAL=80, CHANGE=50;
+const SPOT=0.8/TOTAL; /* pickup rate per loose snowball (per second): a side throws faster the more snowballs it has */
+const cfg={nR:10,nP:10};
+let players=[],balls=[],t=0,running=false,speed=1,events=[],log=[],nextRound=ROUND,freezing=false,roundN=0,counted=false;
+
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>a+Math.random()*(b-a);
+const sideOf=x=>x<MID?'R':'P';
+const css=getComputedStyle(document.documentElement);
+const col=n=>css.getPropertyValue(n).trim();
+
+function spawnBall(side){
+  const x=side==='R'?rand(M+12,MID-28):rand(MID+28,W-M-12);
+  balls.push({x,y:rand(M+12,H-M-12),state:'ground',claim:null,h:0});
+}
+function addPlayer(side){
+  const hx=side==='R'?rand(M+40,MID-70):rand(MID+70,W-M-40), hy=rand(M+30,H-M-30);
+  players.push({side,x:hx,y:hy,hx,hy,state:'idle',ball:null,timer:0,ph:rand(0,6.28)});
+}
+function release(p){
+  const b=p.ball; if(!b) return;
+  b.claim=null; if(b.state==='held'){b.state='ground';b.x=p.x;b.y=p.y;}
+  p.ball=null;
+}
+function counts(){
+  let R=0,P=0;
+  for(const b of balls){const s=b.state==='air'?b.from:sideOf(b.x); s==='R'?R++:P++;}
+  return {R,P};
+}
+function rates(){
+  const span=Math.min(RATE_WIN,Math.max(t,0.001)); let f=0,r=0;
+  for(let i=events.length-1;i>=0;i--){const e=events[i]; if(e.t<=t-RATE_WIN) break; e.d==='f'?f++:r++;}
+  return {f:f/span,r:r/span};
+}
+function logRound(){const c=counts(); log.push({kind:'round',n:roundN,x:roundN,R:c.R,P:c.P}); renderLog();}
+function logChange(label){const c=counts(); log.push({kind:'change',label,x:roundN,R:c.R,P:c.P}); renderLog();}
+
+function reset(){
+  t=0;balls=[];players=[];events=[];log=[];nextRound=ROUND;freezing=false;roundN=0;counted=false;
+  for(let i=0;i<TOTAL;i++) spawnBall('R');
+  for(let i=0;i<cfg.nR;i++) addPlayer('R');
+  for(let i=0;i<cfg.nP;i++) addPlayer('P');
+  logRound(); setRunning(false);
+}
+
+function moveToward(p,x,y,v,dt){
+  const dx=x-p.x,dy=y-p.y,d=Math.hypot(dx,dy); if(d<1e-6) return 0;
+  const s=Math.min(d,v*dt); p.x+=dx/d*s; p.y+=dy/d*s;
+  const lo=p.side==='R'?M+8:MID+14, hi=p.side==='R'?MID-14:W-M-8;
+  p.x=Math.max(lo,Math.min(hi,p.x)); p.y=Math.max(M+8,Math.min(H-M-8,p.y));
+  return d-s;
+}
+function throwBall(p){
+  const b=p.ball;
+  const tx=p.side==='R'?rand(MID+28,W-M-12):rand(M+12,MID-28), ty=rand(M+12,H-M-12);
+  const d=Math.hypot(tx-b.x,ty-b.y);
+  Object.assign(b,{state:'air',from:p.side,fx:b.x,fy:b.y,tx,ty,ft:0,dur:0.35+d/900,peak:30+d*0.09,claim:null});
+  p.ball=null;p.state='recover';p.timer=RECOVER;
+  events.push({t,d:p.side==='R'?'f':'r'});
+}
+
+function step(dt){
+  if(!freezing) t+=dt;
+  for(const p of players){
+    p.ph+=dt*6;
+    if(freezing){
+      if(p.ball) release(p);
+      p.state='idle';
+      moveToward(p,p.hx+Math.sin(p.ph*0.3)*12,p.hy+Math.cos(p.ph*0.23)*12,40,dt);
+      continue;
+    }
+    if(p.state==='idle'){
+      let best=null,bd=1e9,n=0;
+      for(const b of balls){
+        if(b.state!=='ground'||b.claim||sideOf(b.x)!==p.side) continue;
+        n++; const d=(b.x-p.x)**2+(b.y-p.y)**2; if(d<bd){bd=d;best=b;}
+      }
+      if(best&&Math.random()<1-Math.exp(-SPOT*n*dt)){best.claim=p;p.ball=best;p.state='seek';}
+      else moveToward(p,p.hx+Math.sin(p.ph*0.3)*12,p.hy+Math.cos(p.ph*0.23)*12,40,dt);
+    }
+    if(p.state==='seek'){
+      if(moveToward(p,p.ball.x,p.ball.y,SPEED,dt)<5){p.ball.state='held';p.state='windup';p.timer=WIND;}
+    } else if(p.state==='windup'){
+      p.timer-=dt; p.ball.x=p.x+(p.side==='R'?8:-8); p.ball.y=p.y-5;
+      if(p.timer<=0) throwBall(p);
+    } else if(p.state==='recover'){
+      p.timer-=dt; if(p.timer<=0) p.state='idle';
+    }
+  }
+  for(const b of balls){
+    if(b.state!=='air') continue;
+    b.ft+=dt; const u=Math.min(1,b.ft/b.dur);
+    b.x=b.fx+(b.tx-b.fx)*u; b.y=b.fy+(b.ty-b.fy)*u; b.h=Math.sin(Math.PI*u)*b.peak;
+    if(u>=1){b.state='ground';b.h=0;}
+  }
+  if(freezing){
+    /* time called: wait for airborne snowballs to land, count, then pause for the student to record */
+    if(!balls.some(b=>b.state==='air')){freezing=false;roundN++;logRound();nextRound+=ROUND;counted=true;setRunning(false);}
+    return;
+  }
+  if(t>=nextRound-1e-9){t=nextRound;freezing=true;}
+  if(events.length>5000) events=events.slice(-2000);
+}
+
+/* ---------- drawing ---------- */
+function fitCanvas(c){
+  const r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  const w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+  return {ctx:c.getContext('2d'),w,h,dpr};
+}
+const field=$('field');
+function drawField(){
+  const {ctx,w,h}=fitCanvas(field);
+  ctx.setTransform(1,0,0,1,0,0);
+  const portrait=h>w;
+  /* simulation runs in a 900×380 landscape frame; on phones the field is drawn rotated (reactants on top) */
+  const P=portrait?(x,y)=>[y/H*w,x/W*h]:(x,y)=>[x/W*w,y/H*h];
+  const k=portrait?w/H*0.85:w/W;
+  ctx.fillStyle=col('--fieldR');portrait?ctx.fillRect(0,0,w,h/2):ctx.fillRect(0,0,w/2,h);
+  ctx.fillStyle=col('--fieldP');portrait?ctx.fillRect(0,h/2,w,h/2):ctx.fillRect(w/2,0,w/2,h);
+  ctx.save();ctx.globalAlpha=.13;ctx.fillStyle=col('--ink');
+  ctx.font=`700 ${Math.round((portrait?52:64)*k)}px "Barlow Condensed", Arial Narrow, sans-serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  if(portrait){ctx.fillText('REACTANTS',w/2,h/4);ctx.fillText('PRODUCTS',w/2,h*3/4);}
+  else{ctx.fillText('REACTANTS',w/4,h/2);ctx.fillText('PRODUCTS',w*3/4,h/2);}
+  ctx.restore();
+  ctx.strokeStyle=col('--muted');ctx.lineWidth=2*k;ctx.setLineDash([10*k,8*k]);
+  ctx.beginPath();portrait?(ctx.moveTo(0,h/2),ctx.lineTo(w,h/2)):(ctx.moveTo(w/2,0),ctx.lineTo(w/2,h));ctx.stroke();ctx.setLineDash([]);
+  const ball=col('--ball'),edge=col('--ballEdge'),shadow=col('--shadow');
+  const drawBall=(sx,sy,r)=>{ctx.beginPath();ctx.arc(sx,sy,r*k,0,7);ctx.fillStyle=ball;ctx.fill();ctx.lineWidth=1.3*k;ctx.strokeStyle=edge;ctx.stroke();};
+  for(const b of balls) if(b.state==='ground'){const [sx,sy]=P(b.x,b.y);drawBall(sx,sy,5);}
+  const cR=col('--react'),cP=col('--prod'),surf=col('--surface');
+  for(const p of players){
+    const [sx,sy]=P(p.x,p.y);
+    const bob=p.state==='seek'?Math.sin(p.ph*2)*1.5*k:0;
+    ctx.beginPath();ctx.ellipse(sx,sy+9*k,8*k,3*k,0,0,7);ctx.fillStyle=shadow;ctx.fill();
+    ctx.beginPath();ctx.arc(sx,sy+bob,9*k,0,7);ctx.fillStyle=p.side==='R'?cR:cP;ctx.fill();
+    ctx.lineWidth=2*k;ctx.strokeStyle=surf;ctx.stroke();
+  }
+  for(const b of balls) if(b.state==='held'){const [sx,sy]=P(b.x,b.y);drawBall(sx,sy,5);}
+  for(const b of balls) if(b.state==='air'){
+    const [sx,sy]=P(b.x,b.y);
+    ctx.beginPath();ctx.ellipse(sx,sy+3*k,5*k,2*k,0,0,7);ctx.fillStyle=shadow;ctx.fill();
+    drawBall(sx,sy-b.h*k*(portrait?0.7:1),5.5);
+  }
+  if(freezing){
+    ctx.save();ctx.globalAlpha=.9;ctx.fillStyle=col('--surface');
+    const bw=Math.min(w*0.8,300*k*(portrait?1.2:1)),bh=56*k;
+    ctx.fillRect(w/2-bw/2,h/2-bh/2,bw,bh);ctx.globalAlpha=1;
+    ctx.fillStyle=col('--ink');ctx.font=`700 ${Math.round(34*k)}px "Barlow Condensed", Arial Narrow, sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('TIME! COUNTING…',w/2,h/2);ctx.restore();
+  }
+}
+
+function niceStep(max,target){
+  const raw=max/target, mag=10**Math.floor(Math.log10(raw)), n=raw/mag;
+  return (n<=1?1:n<=2?2:n<=5?5:10)*mag;
+}
+function drawChart(){
+  const canvas=$('chartN');
+  const {ctx,w,h,dpr}=fitCanvas(canvas);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W2=w/dpr,H2=h/dpr,L=38,R=12,T=8,B=34;
+  ctx.clearRect(0,0,W2,H2);
+  const lastX=log.length?log[log.length-1].x:0;
+  const xMax=Math.max(6,lastX+1);
+  const yMaxIn=Math.max(TOTAL,...log.map(e=>Math.max(e.R,e.P)));
+  const yStep=niceStep(yMaxIn,4), yMax=Math.ceil(yMaxIn/yStep)*yStep;
+  const X=v=>L+(v/xMax)*(W2-L-R), Y=v=>T+(1-v/yMax)*(H2-T-B);
+  ctx.font='11px "JetBrains Mono", ui-monospace, monospace';ctx.fillStyle=col('--muted');
+  ctx.strokeStyle=col('--line');ctx.lineWidth=1;
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let v=0;v<=yMax+1e-9;v+=yStep){
+    const y=Math.round(Y(v))+.5;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W2-R,y);ctx.stroke();
+    ctx.fillText(String(Math.round(v)),L-6,y);
+  }
+  const xStep=Math.max(1,niceStep(xMax,8));
+  ctx.textAlign='center';ctx.textBaseline='top';
+  for(let v=0;v<=xMax+1e-9;v+=xStep) ctx.fillText(String(Math.round(v)),X(v),H2-B+5);
+  ctx.fillText('round',L+(W2-L-R)/2,H2-14);
+  [['R',col('--react')],['P',col('--prod')]].forEach(([key,c])=>{
+    ctx.strokeStyle=c;ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();
+    log.forEach((e,j)=>{const x=X(e.x),y=Y(e[key]);j?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke();
+    for(const e of log){
+      ctx.beginPath();ctx.arc(X(e.x),Y(e[key]),3.5,0,7);
+      if(e.kind==='round'){ctx.fillStyle=c;ctx.fill();}
+      else{ctx.fillStyle=col('--surface');ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=c;ctx.stroke();}
+    }
+  });
+}
+
+/* ---------- UI ---------- */
+const disturbIds=['addR','addP','remR','remP'];
+function updateUI(){
+  const c=counts(),rt=rates();
+  $('cR').textContent=c.R;$('cP').textContent=c.P;
+  $('rF').textContent=rt.f.toFixed(1)+' throws/s';
+  $('rR').textContent=rt.r.toFixed(1)+' throws/s';
+  $('roundNum').textContent=(running||freezing)?roundN+1:roundN;
+  $('status').textContent=freezing?'Time! Counting…':running?'Running':t===0?'Press Start':counted?'Counted. Press Resume':'Paused';
+}
+function renderLog(){
+  $('tbody').innerHTML=log.map(e=>e.kind==='round'
+    ?`<tr><td>${e.n}</td><td class="r">${e.R}</td><td class="p">${e.P}</td></tr>`
+    :`<tr class="change"><td>${e.label}</td><td class="r">${e.R}</td><td class="p">${e.P}</td></tr>`).join('');
+  const tw=$('tw');tw.scrollTop=tw.scrollHeight;
+}
+function setRunning(v){
+  running=v; if(v) counted=false;
+  $('play').textContent=v?'Pause':(t>0?'Resume':'Start');
+  for(const id of disturbIds) $(id).disabled=v||freezing;
+}
+
+$('play').onclick=()=>setRunning(!running);
+$('reset').onclick=reset;
+document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>{
+  speed=+b.dataset.s;document.querySelectorAll('#speed button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+});
+function addN(side,n){for(let i=0;i<n;i++) spawnBall(side); return n;}
+function remN(side,n){
+  let k=0;
+  for(;k<n;k++){
+    const i=balls.findIndex(b=>b.state==='ground'&&!b.claim&&sideOf(b.x)===side);
+    if(i<0) break; balls.splice(i,1);
+  }
+  return k;
+}
+function disturb(fn,side,verb){
+  if(running||freezing) return;
+  const n=fn(side,CHANGE); if(!n) return;
+  logChange(`${verb==='add'?'+':'−'}${n} ${verb==='add'?'to':'from'} ${side==='R'?'reactant':'product'} side`);
+}
+$('addR').onclick=()=>disturb(addN,'R','add');$('addP').onclick=()=>disturb(addN,'P','add');
+$('remR').onclick=()=>disturb(remN,'R','remove');$('remP').onclick=()=>disturb(remN,'P','remove');
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
+  const [r,p]=b.dataset.preset.split(',').map(Number);
+  cfg.nR=r;cfg.nP=p;
+  document.querySelectorAll('[data-preset]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  reset();
+});
+
+let last=performance.now();
+function frame(now){
+  const real=Math.min(0.05,(now-last)/1000);last=now;
+  if(running){
+    const simDt=real*speed, n=Math.ceil(simDt/(1/120)), h=simDt/n;
+    for(let i=0;i<n&&running;i++) step(h);
+  }
+  drawField();
+  drawChart();
+  updateUI();
+  requestAnimationFrame(frame);
+}
+reset();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
