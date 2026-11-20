@@ -12,6 +12,8 @@
   Learning outcome: after Lec20, students predict how an equilibrium responds to adding or removing a reactant or
   product, explain the response using forward and reverse rates, and apply it to how breathing changes blood acidity.
 
+  Self-contained: needs no lecture or worksheet. Every answer is checked in the page (multiple choice, or a typed
+  number checked against the student's own run). Nothing is saved or sent.
   Core loop: read the situation, lock in a call BEFORE the fight runs, watch the run, get feedback that says why.
   Level 1 Opening whistle (Match 1)   where it levels off, both sides still throwing, why the counts stop changing
   Level 2 Dump truck (Match 2)        five disturbances in random order (+/- each side, add water): call the shift,
@@ -113,6 +115,7 @@ button.ghost{font-weight:400;font-size:14px}
 .call .prompt{font-size:17px;font-weight:700}
 .qrow{display:flex;flex-direction:column;gap:6px}
 .qrow+.qrow{border-top:1px dashed var(--line);padding-top:10px}
+.numlab{font-weight:700}
 .rowlab{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:14px}
 .opts{display:flex;flex-direction:column;gap:6px}
 .opts.inline{flex-direction:row;flex-wrap:wrap}
@@ -153,9 +156,31 @@ button.ghost{font-weight:400;font-size:14px}
 .chip.ok{border-color:var(--ok);color:var(--ok)} .chip.part{border-color:var(--part);color:var(--part)} .chip.bad{border-color:var(--bad);color:var(--bad)}
 
 /* graph + K */
-.charts{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
-.charts.nok{grid-template-columns:minmax(0,1fr)}
-@media (max-width:640px){.charts{grid-template-columns:minmax(0,1fr)}}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}
+.charts .wide{grid-column:span 2}
+@media (max-width:640px){.charts .wide{grid-column:auto}}
+.tablewrap{max-height:220px;overflow:auto}
+.logt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.logt th{position:sticky;top:0;background:var(--surface);text-align:right;font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--line)}
+.logt td{text-align:right;padding:4px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px}
+.logt th:first-child,.logt td:first-child{text-align:left}
+.logt tr.change td{font-style:italic;background:var(--bg)}
+.logt tr.change td:first-child{font-family:var(--body);font-size:12px}
+/* typed numbers */
+.numrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.numin{width:7em;font-family:var(--mono);font-size:18px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);border-bottom-width:3px;background:var(--surface);color:var(--ink);text-align:right}
+.numin:focus-visible{outline:3px solid var(--react);outline-offset:2px}
+.numin:disabled{border-bottom-width:1px;opacity:1}
+.numrow .nmark{font-weight:700;font-size:14px}
+.numrow.ok .numin{border-color:var(--ok);background:var(--okbg)} .numrow.ok .nmark{color:var(--ok)}
+.numrow.part .numin{border-color:var(--part);background:var(--partbg)} .numrow.part .nmark{color:var(--part)}
+.numrow.bad .numin{border-color:var(--bad);background:var(--badbg)} .numrow.bad .nmark{color:var(--bad)}
+.rownote.part{color:var(--part)}
+.data{font-family:var(--mono);font-size:14px;background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:6px;display:grid;grid-template-columns:auto repeat(3,minmax(3em,auto));gap:2px 14px;justify-content:start;font-weight:400}
+.data b{font-family:var(--display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:12px;color:var(--muted)}
+/* pick-the-graph options */
+.opt svg{flex:none;width:132px;height:62px;border-radius:6px;background:var(--bg)}
+.opt span:has(svg){display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
 .chart{width:100%;height:200px;display:block}
@@ -172,7 +197,7 @@ button.ghost{font-weight:400;font-size:14px}
 .skill .ct{font-family:var(--mono);font-size:14px}
 .skill .pips{grid-column:1/-1;display:flex;gap:4px;flex-wrap:wrap}
 .skill .pips span{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--surface)}
-.skill .pips .y{background:var(--ok)} .skill .pips .n{background:var(--surface);border:2px solid var(--bad);color:var(--bad)}
+.skill .pips .y{background:var(--ok)} .skill .pips .h{background:var(--part)} .skill .pips .n{background:var(--surface);border:2px solid var(--bad);color:var(--bad)}
 .skill .word{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px}
 .word.ok{color:var(--ok)} .word.part{color:var(--part)} .word.bad{color:var(--bad)}
 .review{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
@@ -197,8 +222,10 @@ button.ghost{font-weight:400;font-size:14px}
 
   <!-- intro -->
   <section class="panel" id="intro">
-    <h2>How the model works</h2>
-    <p>When CO<sub>2</sub> dissolves in water, some of it reacts to make carbonic acid while some carbonic acid falls apart again. Both directions run at the same time. You've seen the snowball model in class and in the simulation:</p>
+    <h2>A reaction that runs both ways</h2>
+    <p>Some reactions run in both directions at once. When carbon dioxide dissolves in water, some of it reacts to make carbonic acid, while some carbonic acid falls apart back into carbon dioxide and water:</p>
+    <p class="eqn"><span>CO₂(g) + H₂O(l) ⇌ H₂CO₃(aq)</span></p>
+    <p>We can’t watch molecules do this, but we can <b>model</b> it: two teams on opposite sides of a line throw snowballs across. Each team tries to keep its own side clear by throwing the snowballs on its side over the line.</p>
     <ul class="key">
       <li>a snowball <span class="eq">=</span> a molecule</li>
       <li>water <span class="eq">=</span> the liquid all around, not a snowball</li>
@@ -209,12 +236,13 @@ button.ghost{font-weight:400;font-size:14px}
     </ul>
     <h3>How to play</h3>
     <ol class="how">
-      <li>Read the situation, then pick your call and press <b>Lock in my call</b>. Most calls are made <em>before</em> the fight runs.</li>
-      <li>Watch the run. The scoreboard shows each side's count and how fast it is throwing (<b>throws/s</b>).</li>
+      <li>Read the situation, then pick your call (or type a number) and press <b>Lock in my call</b>. Most calls are made <em>before</em> the fight runs.</li>
+      <li>Watch the run. Every 5 seconds of fighting is one <b>round</b>: at the end of each round both sides are counted, and the counts go into the <b>round log</b> and the graph.</li>
+      <li>The scoreboard shows each side’s count and how fast it is throwing (<b>throws/s</b>).</li>
       <li>The feedback tells you what happened in <em>your</em> run and why.</li>
       <li>On a phone the field is turned: the reactant side is on top.</li>
     </ol>
-    <p class="note">Four levels, about 20 minutes. At the end you get a scouting report: your calls by skill, and what to review.</p>
+    <p class="note">Four levels, about 25 minutes. Keep a calculator handy for Level 3. At the end you get a scouting report: your calls by skill, and what to review.</p>
     <div class="startrow">
       <button class="primary" id="startBtn">Start Level 1</button>
       <span class="lbl">or jump to</span>
@@ -247,11 +275,15 @@ button.ghost{font-weight:400;font-size:14px}
 
       <section class="panel call" id="call"></section>
 
-      <section class="charts nok" id="charts">
-        <div class="panel">
+      <section class="charts" id="charts">
+        <div class="panel wide">
           <h3>Snowballs per round</h3>
           <div class="legend"><span><i style="background:var(--react)"></i><span id="legR">Reactant side</span></span><span><i style="background:var(--prod)"></i><span id="legP">Product side</span></span><span>hollow dot = right after a change</span></div>
           <canvas class="chart" id="chartN" role="img" aria-label="Graph of snowballs on each side by round"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Round log</h3>
+          <div class="tablewrap" id="tw"><table class="logt"><thead id="lhead"></thead><tbody id="lbody"></tbody></table></div>
         </div>
         <div class="panel" id="kPanel" hidden>
           <h3>K from the last 3 rounds</h3>
@@ -289,7 +321,9 @@ const W=900,H=380,MID=W/2,M=16;
 const SPEED=170, WIND=0.2, RECOVER=0.1, RATE_WIN=4, ROUND=5;
 const TEST=/[?&]test\b/.test(location.search);
 const BASE_SPEED=TEST?40:4, FAST_SPEED=TEST?60:16;
-const cfg={nR:10,nP:10,total:80,start:'R',names:{R:'REACTANTS',P:'PRODUCTS'}};
+const STD_NAMES={R:'REACTANTS',P:'PRODUCTS'};
+const BODY_NAMES={R:'CO₂',P:'H₂CO₃'};
+const cfg={nR:10,nP:10,total:80,start:'R',names:STD_NAMES};
 let spot=0.8/cfg.total;
 let players=[],balls=[],t=0,running=false,speed=BASE_SPEED,events=[],log=[],nextRound=ROUND,freezing=false,roundN=0;
 let stopAt=null,runDone=null;
@@ -322,8 +356,15 @@ function rates(){
   for(let i=events.length-1;i>=0;i--){const e=events[i]; if(e.t<=t-RATE_WIN) break; e.d==='f'?f++:r++;}
   return {f:f/span,r:r/span};
 }
-function logRound(){const c=counts(),rt=rates(); log.push({kind:'round',n:roundN,x:roundN,R:c.R,P:c.P,f:rt.f,r:rt.r}); drawChart();}
-function logChange(label){const c=counts(); log.push({kind:'change',label,x:roundN,R:c.R,P:c.P}); drawChart();}
+function logRound(){const c=counts(),rt=rates(); log.push({kind:'round',n:roundN,x:roundN,R:c.R,P:c.P,f:rt.f,r:rt.r}); drawChart();renderLog();}
+function logChange(label){const c=counts(); log.push({kind:'change',label,x:roundN,R:c.R,P:c.P}); drawChart();renderLog();}
+function renderLog(){
+  const h=$('lhead'),b=$('lbody'); if(!h) return;
+  h.innerHTML=`<tr><th>Round</th><th>${cfg.names===STD_NAMES?'Reactant':'CO₂'}</th><th>${cfg.names===STD_NAMES?'Product':'H₂CO₃'}</th></tr>`;
+  b.innerHTML=log.map(e=>e.kind==='round'?`<tr><td>${e.n}</td><td class="r-t">${e.R}</td><td class="p-t">${e.P}</td></tr>`
+    :`<tr class="change"><td>${e.label}</td><td class="r-t">${e.R}</td><td class="p-t">${e.P}</td></tr>`).join('');
+  const tw=$('tw');tw.scrollTop=tw.scrollHeight;
+}
 
 function setup(o){
   Object.assign(cfg,o);
@@ -515,8 +556,6 @@ window.addEventListener('resize',drawChart);
 /* =========================================================================================================
    Game layer
    ========================================================================================================= */
-const STD_NAMES={R:'REACTANTS',P:'PRODUCTS'};
-const BODY_NAMES={R:'CO₂',P:'H₂CO₃'};
 let sideWords={R:'reactant side',P:'product side'};
 const SKILLS=[
   {id:'dyn',  name:'Equilibrium keeps moving',  what:'At equilibrium the counts hold steady while both sides keep throwing.'},
@@ -526,7 +565,7 @@ const SKILLS=[
   {id:'body', name:'Breathing and blood acidity',what:'The same calls applied to CO₂, carbonic acid and H⁺ in blood.'}
 ];
 let score=[];
-function record(skill,ok,learn){score.push({skill,ok,learn});}
+function record(skill,state,learn){score.push({skill,state,learn});}
 
 const el=(tag,cls,html)=>{const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e;};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -547,6 +586,7 @@ function setNames(body){
   sideWords=body?{R:'CO₂ side',P:'H₂CO₃ side'}:{R:'reactant side',P:'product side'};
   $('nameR').textContent=$('legR').textContent=body?'CO₂ side':'Reactant side';
   $('nameP').textContent=$('legP').textContent=body?'H₂CO₃ side':'Product side';
+  renderLog();
 }
 function setTrack(i){
   document.querySelectorAll('#track li').forEach((li,j)=>{
@@ -564,7 +604,7 @@ function banner(text){
   const b=$('banner');b.textContent=text;b.hidden=false;
   clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.hidden=true,1800);
 }
-function showK(on){$('kPanel').hidden=!on;$('charts').classList.toggle('nok',!on);drawChart();}
+function showK(on){$('kPanel').hidden=!on;drawChart();}
 
 async function run(n,label){
   speed=BASE_SPEED;$('skip').hidden=false;
@@ -610,9 +650,22 @@ function call(q){
     const picks=q.rows.map(()=>null);
     let locked=false;
     const lock=el('button','primary','Lock in my call');lock.disabled=true;
+    const ready=()=>{lock.disabled=picks.some(p=>p===null);};
     const groups=q.rows.map((row,i)=>{
       const wrap=el('div','qrow');
-      if(row.label) wrap.append(el('div','rowlab',row.label));
+      if(row.label) wrap.append(el('div',row.type==='num'?'numlab':'rowlab',row.label));
+      if(row.type==='num'){
+        const line=el('div','numrow');
+        const inp=document.createElement('input');
+        inp.type='text';inp.inputMode='decimal';inp.className='numin';inp.autocomplete='off';
+        inp.setAttribute('aria-label',(row.label||q.prompt).replace(/<[^>]+>/g,''));
+        inp.oninput=()=>{const v=parseFloat(inp.value.replace(',','.'));picks[i]=Number.isFinite(v)?v:null;ready();};
+        inp.onkeydown=e=>{if(e.key==='Enter'&&!lock.disabled&&!locked) lock.click();};
+        line.append(inp);
+        if(row.unit) line.append(el('span','note',row.unit));
+        wrap.append(line);box.append(wrap);
+        return {g:line,wrap,inp};
+      }
       const g=el('div','opts'+(row.inline?' inline':''));
       g.setAttribute('role','radiogroup');g.setAttribute('aria-label',row.label||q.prompt.replace(/<[^>]+>/g,''));
       const opts=row.shuffle?shuffle(row.opts.slice()):row.opts;
@@ -624,7 +677,7 @@ function call(q){
           if(locked) return;
           picks[i]=o.id;
           g.querySelectorAll('.opt').forEach(x=>x.setAttribute('aria-checked',x===b?'true':'false'));
-          lock.disabled=picks.some(p=>p===null);
+          ready();
         };
         g.append(b);
       });
@@ -634,21 +687,28 @@ function call(q){
     const foot=el('div','callfoot');foot.append(lock);box.append(foot);
     lock.onclick=async()=>{
       locked=true;lock.remove();
-      groups.forEach(({g})=>{g.classList.add('locked');g.querySelectorAll('.opt').forEach(b=>{b.setAttribute('aria-disabled','true');b.tabIndex=-1;});});
+      groups.forEach(({g,inp})=>{if(inp){inp.disabled=true;return;}g.classList.add('locked');g.querySelectorAll('.opt').forEach(b=>{b.setAttribute('aria-disabled','true');b.tabIndex=-1;});});
       if(q.afterLock){foot.append(el('p','note','Call locked in. Watch the fight.'));$('field').scrollIntoView({block:'nearest',behavior:'smooth'});await q.afterLock();foot.innerHTML='';}
       const fb=q.feedback(picks)||{};
-      let nOk=0;
-      q.rows.forEach((row,i)=>{
-        const ok=picks[i]===row.correct; if(ok) nOk++;
-        record(row.skill,ok,row.learn);
-        groups[i].g.querySelectorAll('.opt').forEach(b=>{
-          if(b.dataset.id===row.correct) b.classList.add('is-correct');
-          if(b.dataset.id===picks[i]) b.classList.add(ok?'pick-ok':'pick-bad');
-        });
-        const note=fb.rowNotes&&fb.rowNotes[i];
-        if(note) groups[i].wrap.append(el('p','rownote '+(ok?'ok':'bad'),note));
+      const states=q.rows.map((row,i)=>{
+        let st,note=fb.rowNotes&&fb.rowNotes[i];
+        if(row.type==='num'){
+          const r=row.check(picks[i],picks);st=r.state;note=r.note;
+          groups[i].g.classList.add(st);
+          groups[i].g.append(el('span','nmark',{ok:'✓ Right',part:'◐ Close',bad:'✕ Not quite'}[st]));
+        } else {
+          st=picks[i]===row.correct?'ok':'bad';
+          groups[i].g.querySelectorAll('.opt').forEach(b=>{
+            if(b.dataset.id===row.correct) b.classList.add('is-correct');
+            if(b.dataset.id===picks[i]) b.classList.add(st==='ok'?'pick-ok':'pick-bad');
+          });
+        }
+        record(row.skill,st,row.learn);
+        if(note) groups[i].wrap.append(el('p','rownote '+st,note));
+        return st;
       });
-      const state=fb.state||(nOk===q.rows.length?'ok':nOk===0?'bad':'part');
+      const nOk=states.filter(x=>x==='ok').length,nBad=states.filter(x=>x==='bad').length;
+      const state=fb.state||(nOk===q.rows.length?'ok':nBad===q.rows.length?'bad':'part');
       if(fb.head) box.append(fbBox(state,fb.head,fb.body));
       const next=el('button','primary',q.next||'Next');
       next.onclick=()=>resolve({picks,state});
@@ -671,6 +731,17 @@ function card(html,btn){
 }
 const pick=(ok,a,b)=>ok?a:b;
 
+/* small sketch graphs for the Level 1 prediction: a = runs to completion, b = levels off near 40, c = oscillates */
+function mini(kind){
+  const X=r=>8+r*20, Y=v=>54-v*0.55;
+  const pts={a:[[80,0],[50,30],[25,55],[10,70],[4,76],[1,79],[0,80]],
+             b:[[80,0],[57,23],[44,36],[40,40],[41,39],[39,41],[40,40]],
+             c:[[80,0],[20,60],[70,10],[15,65],[72,8],[18,62],[75,5]]}[kind];
+  const path=j=>pts.map((p,i)=>`${i?'L':'M'}${X(i)},${Y(p[j])}`).join('');
+  return `<svg viewBox="0 0 132 62" aria-hidden="true"><path d="M8,54H128" stroke="var(--line)" stroke-width="1"/><path d="${path(0)}" fill="none" stroke="var(--react)" stroke-width="2.2"/><path d="${path(1)}" fill="none" stroke="var(--prod)" stroke-width="2.2" stroke-dasharray="4 3"/></svg>`;
+}
+const near=(v,target,okTol,partTol)=>Math.abs(v-target)<=okTol?'ok':Math.abs(v-target)<=partTol?'part':'bad';
+
 /* ---------------------------------------- Level 1: Opening whistle ---------------------------------------- */
 async function level1(){
   setTrack(0);setNames(false);showK(false);$('tray').innerHTML='';
@@ -680,18 +751,18 @@ async function level1(){
   await card(`<h3>Your goal</h3><p>Call where Match 1 ends up, and what the teams are doing once the counts stop changing.</p>`,'Let’s go');
 
   await call({
-    prompt:'Call it before the whistle: where will the counts end up?',
-    rows:[{skill:'k',correct:'b',learn:'Even teams level off near half and half. Neither side ever empties.',opts:[
-      {id:'a',t:'Nearly all 80 end up on the product side'},
-      {id:'b',t:'They level off near 40 and 40'},
-      {id:'c',t:'They keep swinging from one side to the other and never level off'}]}],
+    prompt:'Call it before the whistle: which graph will Match 1 look like? (Solid line: reactant side. Dashed line: product side.)',
+    rows:[{skill:'k',correct:'b',shuffle:true,learn:'Even teams level off near half and half. Neither side ever empties.',opts:[
+      {id:'a',t:mini('a')+'<span class="gtxt">Nearly all 80 end up on the product side</span>'},
+      {id:'b',t:mini('b')+'<span class="gtxt">A fast change at first, then both level off near 40</span>'},
+      {id:'c',t:mini('c')+'<span class="gtxt">They keep swinging from side to side and never level off</span>'}]}],
     afterLock:()=>run(6,'Match 1 is running…'),
     feedback:p=>{
       const e=lastRound(),ok=p[0]==='b';
       return {head:ok?'They leveled off near 40 and 40.':
         p[0]==='a'?'The reactant side never empties: the product side throws snowballs back as soon as it has them.':
         'After the first rush the counts stop trending. They only wobble by a few snowballs.',
-        body:`Your run, round 6: reactant side ${e.R}, product side ${e.P}. With even teams, each side ends up with about half.`};
+        body:`Compare with the graph of your run. Round 6: reactant side ${e.R}, product side ${e.P}. With even teams, each side ends up with about half.`};
     }});
 
   const r6=lastRound();
@@ -765,9 +836,13 @@ async function level2(){
     const learnDir=d.kind==='add'?'Adding to a side shifts the equilibrium away from that side.':
       d.kind==='rem'?'Removing from a side shifts the equilibrium toward that side.':'Adding water (the liquid all around) doesn’t shift the equilibrium.';
 
+    const predictRow=(d.kind==='add'&&d.side==='P'&&!askedHalf)?[{type:'num',skill:'k',label:`And predict: there are 130 snowballs now and the teams are even. About where will the reactant side level off?`,unit:'snowballs',
+      learn:'With even teams, the counts level off near half the total on each side, wherever the snowballs started.',
+      check:v=>{const e=lastRound(),st=near(v,65,8,16);
+        return {state:st,note:`Even teams settle near half of 130, about 65 each. Your run was at ${e.R} after five rounds.`};}}]:[];
     const r1=await call({
       prompt:'Call the shift: over the next few rounds, which way will snowballs move overall?',
-      rows:[{skill:'shift',correct:d.correct,learn:learnDir,opts:SHIFT_OPTS}],
+      rows:[{skill:'shift',correct:d.correct,learn:learnDir,opts:SHIFT_OPTS},...predictRow],
       afterLock:()=>run(5,'Running five rounds…'),
       feedback:p=>{
         const e=lastRound(),ok=p[0]===d.correct;
@@ -778,7 +853,7 @@ async function level2(){
         const head=ok?(d.correct==='N'?'No shift.':`Shift ${SHIFT_WORD[d.correct]}.`):
           (d.correct==='N'?`It didn’t shift ${SHIFT_WORD[p[0]]}: nothing changed that matters to the fight.`:
            p[0]==='N'?`It did shift: ${SHIFT_WORD[d.correct]}.`:`It shifted the other way: ${SHIFT_WORD[d.correct]}.`);
-        return {head,body:moveTxt+' '+rule.replace(/<[^>]+>/g,'')};
+        return {head,body:moveTxt+' '+rule.replace(/<[^>]+>/g,''),state:ok?'ok':'bad'};
       }});
 
     let whyOk=null;
@@ -810,19 +885,14 @@ async function level2(){
 
     if(d.kind==='add'&&d.side==='P'&&!askedHalf){
       askedHalf=true;
-      const e=lastRound(),gain=e.R-pre.R;
+      const e=lastRound(),gain=e.R-just.R;
       await call({
-        prompt:`Of the 50 snowballs you dumped on the product side, about how many ended up on the reactant side once it settled?`,
-        rows:[{skill:'why',correct:'b',learn:'The fight undoes part of a disturbance, not all of it: about half of the 50 moved.',opts:[
-          {id:'a',t:'All 50: the product side went back to where it was'},
-          {id:'b',t:'About half of them'},
-          {id:'c',t:'None: they all stayed on the product side'}],inline:false}],
-        feedback:p=>{
-          const ok=p[0]==='b';
-          return {head:ok?'About half moved. The fight undid part of the dump, not all of it.':
-            p[0]==='a'?'The product side ended higher than before the dump. Only part of the 50 moved.':'Some did move: the reactant side gained snowballs.',
-            body:`Reactant side before the dump: ${pre.R}. After five rounds: ${e.R}, a gain of ${gain}. Both sides end higher than before, because there are 130 snowballs now.`};
-        }});
+        prompt:`Use the round log: how many more snowballs does the reactant side have now (round 5) than right after the dump (the “+50 to product side” row)?`,
+        rows:[{type:'num',skill:'why',unit:'snowballs',learn:'The fight undoes part of a disturbance, not all of it: about half of the 50 moved.',
+          check:v=>{const st=Math.abs(v-gain)<0.5?'ok':Math.abs(v-gain)<=3?'part':'bad';
+            return {state:st,note:`${e.R} − ${just.R} = ${gain}.`};}}],
+        feedback:()=>({head:`${gain} of the 50 dumped snowballs moved to the reactant side: about half.`,
+          body:`The fight undid part of the dump, not all of it. The product side ended at ${e.P}, still above where it was before the dump (${pre.P}). Both sides end higher, because there are 130 snowballs now.`})});
     }
     const dirOk=r1.state==='ok';
     const st=d.kind==='water'?(dirOk?'ok':'bad'):(dirOk&&whyOk?'ok':(dirOk||whyOk)?'part':'bad');
@@ -859,7 +929,7 @@ async function level3(){
       return {head:ok?'The reactant side ends up with more.':
         p[0]==='P'?'Sixteen throwers clear the product side fast, and four can’t send snowballs over as fast. They pile up on the reactant side.':
         'Equal only happens with even teams. Here they pile up on the 4-thrower side.',
-        body:`Rounds ${a.from}–${a.to} averaged ${f1(a.R)} on the reactant side and ${f1(a.P)} on the product side. The counts still leveled off, so this is an equilibrium too, just not an equal one.`};
+        body:`Check rounds ${a.from}–${a.to} in the round log: far more on the reactant side. The counts still leveled off, so this is an equilibrium too, just not an equal one.`};
     }});
   const e8=lastRound();
   await call({
@@ -874,6 +944,26 @@ async function level3(){
         p[0]==='a'?'Check the scoreboard: the two rates are close. More throwers doesn’t mean more throws.':'The 4 throwers are the busiest players on the field.',
         body:`Reactant side ${f1(e8.f)}/s, product side ${f1(e8.r)}/s. The 4 throwers stand in a pile of about ${e8.R} snowballs and always have one in reach. The 16 share about ${e8.P} and mostly wait for one to land.`};
     }});
+  {
+    const rs=rounds().slice(-3),a=avgLast(3),K=a.P/a.R;
+    const cell=x=>`<span>${x}</span>`;
+    const data=`<span class="data"><b>Round</b>${rs.map(e=>cell(e.n)).join('')}<b class="r-t">Reactant</b>${rs.map(e=>cell(e.R)).join('')}<b class="p-t">Product</b>${rs.map(e=>cell(e.P)).join('')}</span>`;
+    await call({
+      prompt:`Chemists describe where an equilibrium sits with one number, the <b>equilibrium constant K</b>. For the model, K = (average on the product side) ÷ (average on the reactant side), using rounds after the counts level off. Work it out for rounds ${a.from}–${a.to}:${data}`,
+      rows:[
+        {type:'num',skill:'k',label:'Average on the reactant side',learn:'Average the leveled-off rounds: add the counts and divide by how many rounds.',
+         check:v=>({state:near(v,a.R,0.5,3),note:`(${rs.map(e=>e.R).join(' + ')}) ÷ 3 = ${f1(a.R)}`})},
+        {type:'num',skill:'k',label:'Average on the product side',learn:'Average the leveled-off rounds: add the counts and divide by how many rounds.',
+         check:v=>({state:near(v,a.P,0.5,3),note:`(${rs.map(e=>e.P).join(' + ')}) ÷ 3 = ${f1(a.P)}`})},
+        {type:'num',skill:'k',label:'K',learn:'K = average product ÷ average reactant (product on top).',
+         check:(v,p)=>{
+           const tol=x=>Math.max(0.02,0.05*x);
+           if(Math.abs(v-K)<=tol(K)) return {state:'ok',note:`${f1(a.P)} ÷ ${f1(a.R)} = ${K.toFixed(2)}`};
+           if(p[0]>0&&Math.abs(v-p[1]/p[0])<=tol(p[1]/p[0])) return {state:'part',note:`Right method, using your averages. With the exact averages: ${f1(a.P)} ÷ ${f1(a.R)} = ${K.toFixed(2)}`};
+           if(Math.abs(v-1/K)<=tol(1/K)) return {state:'bad',note:`That is reactant ÷ product, upside down. K puts product on top: ${f1(a.P)} ÷ ${f1(a.R)} = ${K.toFixed(2)}`};
+           return {state:'bad',note:`${f1(a.P)} ÷ ${f1(a.R)} = ${K.toFixed(2)}`};}}],
+      feedback:()=>({head:`K ≈ ${K.toFixed(2)}, less than 1: more reactant than product at equilibrium.`,body:'It is now in the K table.'})});
+  }
   const K1=addK('4 v 16');showK(true);
 
   setup({nR:16,nP:4,total:80,start:'R'});status('');
@@ -890,6 +980,17 @@ async function level3(){
       return {head:ok?'The product side ends up with more: the mirror image of 4 v 16.':'It’s the mirror image of 4 v 16: snowballs pile up on the 4-thrower side, now the product side.',
         body:`Rounds ${a.from}–${a.to} averaged ${f1(a.R)} on the reactant side and ${f1(a.P)} on the product side.`};
     }});
+  {
+    const a=avgLast(3),K=a.P/a.R;
+    await call({
+      prompt:`Rounds ${a.from}–${a.to} of this match averaged <b class="r">${f1(a.R)}</b> on the reactant side and <b class="p">${f1(a.P)}</b> on the product side. What is K?`,
+      rows:[{type:'num',skill:'k',label:'K',learn:'K = average product ÷ average reactant (product on top).',
+        check:v=>{const tol=x=>Math.max(0.05,0.05*x);
+          if(Math.abs(v-K)<=tol(K)) return {state:'ok',note:`${f1(a.P)} ÷ ${f1(a.R)} = ${K.toFixed(2)}`};
+          if(Math.abs(v-1/K)<=tol(1/K)) return {state:'bad',note:`That is reactant ÷ product, upside down: ${f1(a.P)} ÷ ${f1(a.R)} = ${K.toFixed(2)}`};
+          return {state:'bad',note:`${f1(a.P)} ÷ ${f1(a.R)} = ${K.toFixed(2)}`};}}],
+      feedback:()=>({head:`K ≈ ${K.toFixed(1)}, greater than 1.`,body:'Same fight, teams swapped: K flipped from well below 1 to well above 1.'})});
+  }
   const K2=addK('16 v 4');
 
   await call({
@@ -917,12 +1018,26 @@ async function level3(){
       return {head:ok?'K stayed about 1.':'65 ÷ 65 is still about 1, the same ratio as 40 ÷ 40.',
         body:'Adding or removing snowballs shifts the equilibrium but leaves K alone. What changed K was the teams: how easily each direction goes.'};
     }});
+  const TF=[{id:'T',t:'True'},{id:'F',t:'False'}];
+  await call({
+    prompt:'Using all four matches so far: true or false? <b>At equilibrium…</b>',
+    rows:[
+      {label:'…the reaction has stopped',opts:TF,correct:'F',inline:true,skill:'dyn',learn:'At equilibrium the reaction has not stopped: both sides keep throwing.'},
+      {label:'…the amounts of reactant and product are equal',opts:TF,correct:'F',inline:true,skill:'k',learn:'At equilibrium the amounts need not be equal (4 v 16 settled near 60 and 20).'},
+      {label:'…the forward reaction is faster than the reverse reaction',opts:TF,correct:'F',inline:true,skill:'dyn',learn:'At equilibrium the forward and reverse rates are equal.'},
+      {label:'…a small K means mostly reactants are present',opts:TF,correct:'T',inline:true,skill:'k',learn:'A small K means mostly reactants at equilibrium.'}],
+    feedback:()=>({rowNotes:[
+      'False. Match 1: throws/s never dropped to 0.',
+      `False. 4 v 16 settled near ${fmt(kRows[0].R)} and ${fmt(kRows[0].P)}.`,
+      'False. In 4 v 16 the two throw rates were about equal, even with 4 times the throwers on one side.',
+      `True. 4 v 16 had K ≈ ${kRows[0].K.toFixed(2)} and far more snowballs on the reactant side.`],
+      head:'Each note names the match that shows it.'})});
   await card(`<h3>Level 3 wrap-up</h3><p><b>Equal rates do not mean equal amounts.</b> At equilibrium the forward and reverse rates are always equal, but the amounts can be far apart.</p><p><b>K</b> = product ÷ reactant once things level off. K &gt; 1, more products; K &lt; 1, more reactants. Dumping or removing snowballs shifts the equilibrium; it does not change K.</p>`,'On to Level 4');
 }
 
 /* ---------------------------------------- Level 4: In the body ---------------------------------------- */
-const UPDOWN=[{id:'up',t:'Rises'},{id:'down',t:'Falls'},{id:'same',t:'Stays the same'}];
 const LR=[{id:'R',t:'Right'},{id:'L',t:'Left'},{id:'N',t:'No shift'}];
+const UPDOWN=[{id:'up',t:'Rises'},{id:'down',t:'Falls'},{id:'same',t:'Stays the same'}];
 const ACID=[{id:'more',t:'More acidic'},{id:'less',t:'Less acidic'}];
 const CASES=[
   {who:'Pneumonia',what:'Fluid in the lungs. The patient can’t breathe deeply or fully push air out.',
@@ -962,6 +1077,21 @@ async function level4(){
   const chips=CASES.map(c=>{const x=el('span','chip',c.who);tray.append(x);return x;});
   const eq=`<p class="eqn"><span>CO₂(g) + H₂O(l) ⇌</span> <span>H₂CO₃(aq) ⇌</span> <span>H⁺(aq) + HCO₃⁻(aq)</span></p>`;
   scene('Level 4 · In the body','Same fight, real molecules',eq+`<p>The reactant side is now <b class="r">CO₂</b> and the product side is <b class="p">H₂CO₃</b>. H⁺ follows H₂CO₃: more H₂CO₃ means more H⁺, and more H⁺ means more acidic blood. Breathing out removes CO₂.</p>`);
+  await call({
+    prompt:'First, translate the snowball moves to the real reaction, CO₂(g) + H₂O(l) ⇌ H₂CO₃(aq). Which way does each change shift it?',
+    rows:[
+      {label:'Add CO₂',opts:LR,correct:'R',skill:'shift',learn:'Adding CO₂ (a reactant) shifts the equilibrium right.'},
+      {label:'Remove CO₂',opts:LR,correct:'L',skill:'shift',learn:'Removing CO₂ shifts the equilibrium left.'},
+      {label:'Add H₂CO₃',opts:LR,correct:'L',skill:'shift',learn:'Adding H₂CO₃ (a product) shifts the equilibrium left.'},
+      {label:'Remove H₂CO₃',opts:LR,correct:'R',skill:'shift',learn:'Removing H₂CO₃ shifts the equilibrium right.'},
+      {label:'Add more H₂O(l)',opts:LR,correct:'N',skill:'shift',learn:'Adding water, the liquid the reaction happens in, does not shift the equilibrium.'}],
+    feedback:()=>({rowNotes:[
+      'Right. Same move as +50 to the reactant side.',
+      'Left. Same move as taking snowballs from the reactant side.',
+      'Left. Same move as +50 to the product side.',
+      'Right. Same move as taking snowballs from the product side.',
+      'No shift. Water is the liquid all around, not a snowball: adding more doesn’t change how concentrated it is.'],
+      head:'Each note gives the matching move from Level 2.'})});
   await card(`<h3>Your goal</h3><p>Five patients. For each, make every call on the chart, then watch the fight play it out. Use the same rules as Level 2: add to a side, shift away; remove from a side, shift toward it.</p>`,'First patient');
   for(let i=0;i<CASES.length;i++){
     const c=CASES[i];
@@ -995,20 +1125,20 @@ async function level4(){
 function report(){
   setTrack(4);
   $('game').hidden=true;$('report').hidden=false;
-  const tot=score.length,ok=score.filter(s=>s.ok).length;
-  $('repSummary').textContent=`You made ${tot} calls and got ${ok} right.`;
+  const tot=score.length,ok=score.filter(s=>s.state==='ok').length,cl=score.filter(s=>s.state==='part').length;
+  $('repSummary').textContent=`You made ${tot} calls: ${ok} right${cl?`, ${cl} close`:''}.`;
   $('repSkills').innerHTML='';
   for(const sk of SKILLS){
     const s=score.filter(x=>x.skill===sk.id); if(!s.length) continue;
-    const n=s.filter(x=>x.ok).length,frac=n/s.length;
+    const n=s.reduce((t,x)=>t+(x.state==='ok'?1:x.state==='part'?0.5:0),0),frac=n/s.length;
     const w=frac===1?['ok','Solid']:frac>=0.6?['part','Getting there']:['bad','Review this'];
     const d=el('div','skill');
     d.innerHTML=`<div><div class="nm">${sk.name}</div><div class="note">${sk.what}</div></div>
-      <div style="text-align:right"><div class="ct">${n} / ${s.length}</div><div class="word ${w[0]}">${w[1]}</div></div>
-      <div class="pips" aria-hidden="true">${s.map(x=>x.ok?'<span class="y">✓</span>':'<span class="n">✕</span>').join('')}</div>`;
+      <div style="text-align:right"><div class="ct">${n%1?n.toFixed(1):n} / ${s.length}</div><div class="word ${w[0]}">${w[1]}</div></div>
+      <div class="pips" aria-hidden="true">${s.map(x=>x.state==='ok'?'<span class="y">✓</span>':x.state==='part'?'<span class="h">◐</span>':'<span class="n">✕</span>').join('')}</div>`;
     $('repSkills').append(d);
   }
-  const miss=[...new Set(score.filter(s=>!s.ok).map(s=>s.learn))];
+  const miss=[...new Set(score.filter(s=>s.state!=='ok').map(s=>s.learn))];
   $('repReviewWrap').hidden=!miss.length;
   $('repReview').innerHTML=miss.map(m=>`<li>${m}</li>`).join('');
   $('report').scrollIntoView({block:'start',behavior:'smooth'});
