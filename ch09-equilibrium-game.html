@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Call the Shift: An Equilibrium Snowball Game</title>
+<!--
+  CHEM 1050, Lec20 (9.3 equilibrium, 9.8 bicarbonate system). Game adaptation of ch09-equilibrium-sim.html and the
+  ch09-equilibrium worksheet. The fight engine (throwers, pickup rate, 5 s rounds) is the simulation's, unchanged, so
+  the numbers students see match the worksheet's sample runs.
+
+  Learning outcome: after Lec20, students predict how an equilibrium responds to adding or removing a reactant or
+  product, explain the response using forward and reverse rates, and apply it to how breathing changes blood acidity.
+
+  Core loop: read the situation, lock in a call BEFORE the fight runs, watch the run, get feedback that says why.
+  Level 1 Opening whistle (Match 1)   where it levels off, both sides still throwing, why the counts stop changing
+  Level 2 Dump truck (Match 2)        five disturbances in random order (+/- each side, add water): call the shift,
+                                      then explain it with throw rates
+  Level 3 Uneven teams (4 v 16, 16 v 4)  which side ends with more, equal rates with unequal amounts, what K means
+  Level 4 In the body                 pneumonia, panic attack, opioid overdose, kidney failure, ketoacidosis
+  End: scouting report, calls right by skill, plus one line to review for each missed call.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#eaf0f5; --surface:#ffffff; --ink:#15202b; --muted:#566473; --line:#c9d4de;
+  --react:#2c69aa; --prod:#bf4f2a;
+  --fieldR:#e1ebf5; --fieldP:#f7e8e1; --ball:#ffffff; --ballEdge:#8fa0b1; --shadow:rgba(30,45,60,.18);
+  --ok:#1d6b40; --okbg:#e3f2e9; --part:#8a5300; --partbg:#fbf0dc; --bad:#a8231c; --badbg:#fbe5e3;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0d131a; --surface:#151d27; --ink:#e4ebf2; --muted:#93a1b0; --line:#2a3645;
+  --react:#6ea9e6; --prod:#ec8a63;
+  --fieldR:#162539; --fieldP:#2d1d18; --ball:#f2f6fa; --ballEdge:#b9c7d4; --shadow:rgba(0,0,0,.45);
+  --ok:#5fc48a; --okbg:#12291c; --part:#e0a64a; --partbg:#2c2210; --bad:#f08a80; --badbg:#321715; color-scheme:dark}}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+[hidden]{display:none!important}
+.wrap{max-width:1000px;margin:0 auto;padding-block:18px 56px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(32px,6vw,48px);line-height:1;margin:0;letter-spacing:.01em;text-transform:uppercase}
+h2{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:24px;line-height:1.1;margin:0}
+h3{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:18px;margin:0}
+header{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;justify-content:space-between}
+header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.lbl{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--muted)}
+b.r,.r-t{color:var(--react)} b.p,.p-t{color:var(--prod)}
+sub{font-size:.72em;line-height:0}
+
+/* level track: where the player is in the learning arc */
+.track{display:flex;gap:6px;list-style:none;margin:0;padding:0}
+.track li{display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 4px;background:var(--surface)}
+.track .pip{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;border:2px solid var(--line);color:var(--muted)}
+.track li[data-state="now"]{color:var(--ink);border-color:var(--ink)}
+.track li[data-state="now"] .pip{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.track li[data-state="done"] .pip{border-color:var(--ink);color:var(--ink)}
+@media (max-width:640px){.track .nm{display:none}.track li{padding:3px}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.note{font-size:14px;color:var(--muted);margin:0}
+p{margin:0}
+
+/* intro */
+.key{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:6px 18px;margin:0;padding:0;list-style:none}
+.key li{display:block}
+.key .eq{font-family:var(--mono);color:var(--muted)}
+.how{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.startrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* scene card */
+.scene .tag{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.scene .body{display:flex;flex-direction:column;gap:6px}
+.eqn{font-family:var(--mono);font-size:15px;background:var(--bg);border-radius:8px;padding:8px 10px}
+.eqn span{white-space:nowrap}
+.chart-card{border-left:5px solid var(--prod);background:var(--bg);border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:2px}
+.chart-card .who{font-family:var(--display);font-weight:700;font-size:20px;text-transform:uppercase;letter-spacing:.03em}
+
+/* scoreboard and field (from the simulation) */
+.board{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.score,.clock{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.score.r{border-top:4px solid var(--react)} .score.p{border-top:4px solid var(--prod);text-align:right;align-items:flex-end}
+.num{font-family:var(--display);font-weight:700;font-size:clamp(38px,8vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+.score.r .num{color:var(--react)} .score.p .num{color:var(--prod)}
+.rate{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.clock{align-items:center;justify-content:center;text-align:center;width:120px}
+.clock .t{font-family:var(--display);font-weight:700;font-size:clamp(30px,6vw,40px);line-height:1;font-variant-numeric:tabular-nums}
+.clock .status{font-size:12px;color:var(--muted)}
+.fieldwrap{position:relative}
+#field{width:100%;aspect-ratio:900/380;display:block;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:700;font-size:clamp(20px,4vw,30px);text-transform:uppercase;letter-spacing:.03em;padding:8px 16px;border-radius:8px;text-align:center;max-width:90%;box-shadow:0 6px 20px var(--shadow);animation:pop .25s ease-out}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.85);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.runbar{display:flex;gap:10px;align-items:center;min-height:36px}
+.runbar .status{color:var(--muted);font-size:14px;flex:1}
+@media (max-width:600px){#field{aspect-ratio:380/440}}
+@media (max-width:480px){.board{gap:6px}.clock{width:84px;padding:6px}.score{padding:6px 10px}.rate{font-size:11px}}
+
+/* buttons */
+button{font-family:var(--body);font-size:15px;font-weight:700;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:focus-visible{outline:3px solid var(--react);outline-offset:2px}
+button:disabled{cursor:default}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);min-width:120px}
+button.primary:disabled{opacity:.4}
+button.ghost{font-weight:400;font-size:14px}
+
+/* the call: options are raised and tappable until locked; locked options go flat */
+.call{border-top:4px solid var(--ink)}
+.call .prompt{font-size:17px;font-weight:700}
+.qrow{display:flex;flex-direction:column;gap:6px}
+.qrow+.qrow{border-top:1px dashed var(--line);padding-top:10px}
+.rowlab{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:14px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opts.inline{flex-direction:row;flex-wrap:wrap}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;font-weight:400;border:1px solid var(--line);border-bottom-width:3px;padding:10px 12px;min-height:46px;line-height:1.35;position:relative}
+.opts.inline .opt{flex:1 1 140px}
+.opt .mark{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);margin-top:1px;display:grid;place-items:center;font-size:13px;font-weight:700;line-height:1}
+.opt[aria-checked="true"]{border-color:var(--ink);background:var(--bg)}
+.opt[aria-checked="true"] .mark{border-color:var(--ink);background:var(--ink);box-shadow:inset 0 0 0 3px var(--surface)}
+.opts.locked .opt{border-bottom-width:1px;padding-bottom:12px}
+.opts.locked .opt:not([aria-checked="true"]):not(.is-correct){opacity:.55}
+.opt.pick-ok{border-color:var(--ok);background:var(--okbg)}
+.opt.pick-ok .mark{border-color:var(--ok);background:var(--ok);box-shadow:none;color:var(--surface)}
+.opt.pick-ok .mark::before{content:"✓"}
+.opt.pick-bad{border-color:var(--bad);background:var(--badbg)}
+.opt.pick-bad .mark{border-color:var(--bad);background:var(--bad);box-shadow:none;color:var(--surface)}
+.opt.pick-bad .mark::before{content:"✕"}
+.opt.is-correct:not(.pick-ok){border:2px dashed var(--ok)}
+.opt.is-correct:not(.pick-ok)::after{content:"Correct answer";font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:var(--ok);margin-left:auto;align-self:center;padding-left:8px;white-space:nowrap}
+.rownote{font-size:14px;margin:0;padding-left:30px}
+.rownote.ok{color:var(--ok)} .rownote.bad{color:var(--bad)}
+.callfoot{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* feedback: icon + verdict word + the reason, never color alone */
+.fb{display:flex;gap:12px;border-radius:10px;padding:12px 14px;border:2px solid}
+.fb .ic{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:18px;color:var(--surface)}
+.fb .verdict{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px}
+.fb .head{font-weight:700}
+.fb .txt{display:flex;flex-direction:column;gap:4px}
+.fb.ok{border-color:var(--ok);background:var(--okbg)} .fb.ok .ic{background:var(--ok)} .fb.ok .verdict{color:var(--ok)}
+.fb.part{border-color:var(--part);background:var(--partbg)} .fb.part .ic{background:var(--part)} .fb.part .verdict{color:var(--part)}
+.fb.bad{border-color:var(--bad);background:var(--badbg)} .fb.bad .ic{background:var(--bad)} .fb.bad .verdict{color:var(--bad)}
+.lesson{border-left:5px solid var(--ink);background:var(--bg);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+
+/* dump tray in level 2 */
+.tray{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}
+.chip.now{border-color:var(--ink);color:var(--ink);font-weight:700}
+.chip.ok{border-color:var(--ok);color:var(--ok)} .chip.part{border-color:var(--part);color:var(--part)} .chip.bad{border-color:var(--bad);color:var(--bad)}
+
+/* graph + K */
+.charts{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:12px}
+.charts.nok{grid-template-columns:minmax(0,1fr)}
+@media (max-width:640px){.charts{grid-template-columns:minmax(0,1fr)}}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.chart{width:100%;height:200px;display:block}
+.kbig{font-family:var(--display);font-weight:700;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.ktable{width:100%;border-collapse:collapse;font-size:14px}
+.ktable td,.ktable th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+.ktable th{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted)}
+.ktable td:first-child,.ktable th:first-child{text-align:left}
+
+/* report */
+.skills{display:flex;flex-direction:column;gap:10px}
+.skill{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px}
+.skill .nm{font-weight:700}
+.skill .ct{font-family:var(--mono);font-size:14px}
+.skill .pips{grid-column:1/-1;display:flex;gap:4px;flex-wrap:wrap}
+.skill .pips span{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--surface)}
+.skill .pips .y{background:var(--ok)} .skill .pips .n{background:var(--surface);border:2px solid var(--bad);color:var(--bad)}
+.skill .word{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px}
+.word.ok{color:var(--ok)} .word.part{color:var(--part)} .word.bad{color:var(--bad)}
+.review{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.banner{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Call the Shift</h1>
+      <p>An equilibrium snowball game. Call what the fight will do before it happens, then watch it play out.</p>
+    </div>
+    <ol class="track" id="track" aria-label="Levels">
+      <li data-state="next"><span class="pip">1</span><span class="nm">Opening whistle</span></li>
+      <li data-state="next"><span class="pip">2</span><span class="nm">Dump truck</span></li>
+      <li data-state="next"><span class="pip">3</span><span class="nm">Uneven teams</span></li>
+      <li data-state="next"><span class="pip">4</span><span class="nm">In the body</span></li>
+    </ol>
+  </header>
+
+  <!-- intro -->
+  <section class="panel" id="intro">
+    <h2>How the model works</h2>
+    <p>When CO<sub>2</sub> dissolves in water, some of it reacts to make carbonic acid while some carbonic acid falls apart again. Both directions run at the same time. You've seen the snowball model in class and in the simulation:</p>
+    <ul class="key">
+      <li>a snowball <span class="eq">=</span> a molecule</li>
+      <li>water <span class="eq">=</span> the liquid all around, not a snowball</li>
+      <li><b class="r">reactant side</b> <span class="eq">=</span> CO<sub>2</sub></li>
+      <li><b class="p">product side</b> <span class="eq">=</span> H<sub>2</sub>CO<sub>3</sub></li>
+      <li>a throw across <span class="eq">=</span> the forward reaction (→)</li>
+      <li>a throw back <span class="eq">=</span> the reverse reaction (←)</li>
+    </ul>
+    <h3>How to play</h3>
+    <ol class="how">
+      <li>Read the situation, then pick your call and press <b>Lock in my call</b>. Most calls are made <em>before</em> the fight runs.</li>
+      <li>Watch the run. The scoreboard shows each side's count and how fast it is throwing (<b>throws/s</b>).</li>
+      <li>The feedback tells you what happened in <em>your</em> run and why.</li>
+      <li>On a phone the field is turned: the reactant side is on top.</li>
+    </ol>
+    <p class="note">Four levels, about 20 minutes. At the end you get a scouting report: your calls by skill, and what to review.</p>
+    <div class="startrow">
+      <button class="primary" id="startBtn">Start Level 1</button>
+      <span class="lbl">or jump to</span>
+      <button class="ghost" data-jump="1">Level 2</button>
+      <button class="ghost" data-jump="2">Level 3</button>
+      <button class="ghost" data-jump="3">Level 4</button>
+    </div>
+  </section>
+
+  <!-- game -->
+  <main id="game" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <section class="panel scene" id="scene" aria-live="polite">
+        <div class="tag"><span class="lbl" id="sceneTag"></span><div class="tray" id="tray"></div></div>
+        <h2 id="sceneTitle"></h2>
+        <div class="body" id="sceneBody"></div>
+      </section>
+
+      <section class="board" aria-label="Scoreboard">
+        <div class="score r"><span class="lbl" id="nameR">Reactant side</span><span class="num" id="cR">0</span><span class="rate" id="rF">0.0 throws/s</span></div>
+        <div class="clock"><span class="lbl">Round</span><span class="t" id="roundNum">0</span><span class="status" id="clockStatus">Waiting</span></div>
+        <div class="score p"><span class="lbl" id="nameP">Product side</span><span class="num" id="cP">0</span><span class="rate" id="rR">0.0 throws/s</span></div>
+      </section>
+
+      <div class="fieldwrap">
+        <canvas id="field" role="img" aria-label="Snowball fight field"></canvas>
+        <div class="banner" id="banner" hidden></div>
+      </div>
+      <div class="runbar"><span class="status" id="runStatus"></span><button class="ghost" id="skip" hidden>Skip ahead</button></div>
+
+      <section class="panel call" id="call"></section>
+
+      <section class="charts nok" id="charts">
+        <div class="panel">
+          <h3>Snowballs per round</h3>
+          <div class="legend"><span><i style="background:var(--react)"></i><span id="legR">Reactant side</span></span><span><i style="background:var(--prod)"></i><span id="legP">Product side</span></span><span>hollow dot = right after a change</span></div>
+          <canvas class="chart" id="chartN" role="img" aria-label="Graph of snowballs on each side by round"></canvas>
+        </div>
+        <div class="panel" id="kPanel" hidden>
+          <h3>K from the last 3 rounds</h3>
+          <table class="ktable"><thead><tr><th>Match</th><th>Avg R</th><th>Avg P</th><th>K</th></tr></thead><tbody id="kBody"></tbody></table>
+          <p class="note">K = average on product side ÷ average on reactant side, after the counts level off.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- report -->
+  <section class="panel" id="report" hidden>
+    <h2>Scouting report</h2>
+    <p id="repSummary"></p>
+    <div class="skills" id="repSkills"></div>
+    <div id="repReviewWrap">
+      <h3>To review</h3>
+      <ul class="review" id="repReview"></ul>
+    </div>
+    <div class="startrow">
+      <button class="primary" id="againBtn">Play again</button>
+      <span class="note">Dumps in Level 2 come in a new order each time, and every run of the fight is a little different.</span>
+    </div>
+  </section>
+  <p class="sr" aria-live="polite" id="announce"></p>
+</div>
+
+<script>
+(function(){
+/* =========================================================================================================
+   Fight engine: the simulation's (ch09-equilibrium-sim.html), with its constants unchanged, so a run here
+   behaves like a run there. Added: runRounds(n) to run a set number of rounds, side names, change markers.
+   ========================================================================================================= */
+const W=900,H=380,MID=W/2,M=16;
+const SPEED=170, WIND=0.2, RECOVER=0.1, RATE_WIN=4, ROUND=5;
+const TEST=/[?&]test\b/.test(location.search);
+const BASE_SPEED=TEST?40:4, FAST_SPEED=TEST?60:16;
+const cfg={nR:10,nP:10,total:80,start:'R',names:{R:'REACTANTS',P:'PRODUCTS'}};
+let spot=0.8/cfg.total;
+let players=[],balls=[],t=0,running=false,speed=BASE_SPEED,events=[],log=[],nextRound=ROUND,freezing=false,roundN=0;
+let stopAt=null,runDone=null;
+
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>a+Math.random()*(b-a);
+const sideOf=x=>x<MID?'R':'P';
+const col=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function spawnBall(side){
+  const x=side==='R'?rand(M+12,MID-28):rand(MID+28,W-M-12);
+  balls.push({x,y:rand(M+12,H-M-12),state:'ground',claim:null,h:0});
+}
+function addPlayer(side){
+  const hx=side==='R'?rand(M+40,MID-70):rand(MID+70,W-M-40), hy=rand(M+30,H-M-30);
+  players.push({side,x:hx,y:hy,hx,hy,state:'idle',ball:null,timer:0,ph:rand(0,6.28)});
+}
+function release(p){
+  const b=p.ball; if(!b) return;
+  b.claim=null; if(b.state==='held'){b.state='ground';b.x=p.x;b.y=p.y;}
+  p.ball=null;
+}
+function counts(){
+  let R=0,P=0;
+  for(const b of balls){const s=b.state==='air'?b.from:sideOf(b.x); s==='R'?R++:P++;}
+  return {R,P};
+}
+function rates(){
+  const span=Math.min(RATE_WIN,Math.max(t,0.001)); let f=0,r=0;
+  for(let i=events.length-1;i>=0;i--){const e=events[i]; if(e.t<=t-RATE_WIN) break; e.d==='f'?f++:r++;}
+  return {f:f/span,r:r/span};
+}
+function logRound(){const c=counts(),rt=rates(); log.push({kind:'round',n:roundN,x:roundN,R:c.R,P:c.P,f:rt.f,r:rt.r}); drawChart();}
+function logChange(label){const c=counts(); log.push({kind:'change',label,x:roundN,R:c.R,P:c.P}); drawChart();}
+
+function setup(o){
+  Object.assign(cfg,o);
+  t=0;balls=[];players=[];events=[];log=[];nextRound=ROUND;freezing=false;roundN=0;running=false;
+  spot=0.8/cfg.total;
+  for(let i=0;i<cfg.total;i++) spawnBall(cfg.start==='S'?(i%2?'P':'R'):cfg.start);
+  for(let i=0;i<cfg.nR;i++) addPlayer('R');
+  for(let i=0;i<cfg.nP;i++) addPlayer('P');
+  logRound();
+}
+/* start the round count over from the current field (used after settling) */
+function restartLog(){log=[];roundN=0;logRound();}
+
+function moveToward(p,x,y,v,dt){
+  const dx=x-p.x,dy=y-p.y,d=Math.hypot(dx,dy); if(d<1e-6) return 0;
+  const s=Math.min(d,v*dt); p.x+=dx/d*s; p.y+=dy/d*s;
+  const lo=p.side==='R'?M+8:MID+14, hi=p.side==='R'?MID-14:W-M-8;
+  p.x=Math.max(lo,Math.min(hi,p.x)); p.y=Math.max(M+8,Math.min(H-M-8,p.y));
+  return d-s;
+}
+function throwBall(p){
+  const b=p.ball;
+  const tx=p.side==='R'?rand(MID+28,W-M-12):rand(M+12,MID-28), ty=rand(M+12,H-M-12);
+  const d=Math.hypot(tx-b.x,ty-b.y);
+  Object.assign(b,{state:'air',from:p.side,fx:b.x,fy:b.y,tx,ty,ft:0,dur:0.35+d/900,peak:30+d*0.09,claim:null});
+  p.ball=null;p.state='recover';p.timer=RECOVER;
+  events.push({t,d:p.side==='R'?'f':'r'});
+}
+function step(dt){
+  if(!freezing) t+=dt;
+  for(const p of players){
+    p.ph+=dt*6;
+    if(freezing){
+      if(p.ball) release(p);
+      p.state='idle';
+      moveToward(p,p.hx+Math.sin(p.ph*0.3)*12,p.hy+Math.cos(p.ph*0.23)*12,40,dt);
+      continue;
+    }
+    if(p.state==='idle'){
+      let best=null,bd=1e9,n=0;
+      for(const b of balls){
+        if(b.state!=='ground'||b.claim||sideOf(b.x)!==p.side) continue;
+        n++; const d=(b.x-p.x)**2+(b.y-p.y)**2; if(d<bd){bd=d;best=b;}
+      }
+      if(best&&Math.random()<1-Math.exp(-spot*n*dt)){best.claim=p;p.ball=best;p.state='seek';}
+      else moveToward(p,p.hx+Math.sin(p.ph*0.3)*12,p.hy+Math.cos(p.ph*0.23)*12,40,dt);
+    }
+    if(p.state==='seek'){
+      if(moveToward(p,p.ball.x,p.ball.y,SPEED,dt)<5){p.ball.state='held';p.state='windup';p.timer=WIND;}
+    } else if(p.state==='windup'){
+      p.timer-=dt; p.ball.x=p.x+(p.side==='R'?8:-8); p.ball.y=p.y-5;
+      if(p.timer<=0) throwBall(p);
+    } else if(p.state==='recover'){
+      p.timer-=dt; if(p.timer<=0) p.state='idle';
+    }
+  }
+  for(const b of balls){
+    if(b.state!=='air') continue;
+    b.ft+=dt; const u=Math.min(1,b.ft/b.dur);
+    b.x=b.fx+(b.tx-b.fx)*u; b.y=b.fy+(b.ty-b.fy)*u; b.h=Math.sin(Math.PI*u)*b.peak;
+    if(u>=1){b.state='ground';b.h=0;}
+  }
+  if(freezing){
+    /* time called: wait for airborne snowballs to land, then count */
+    if(!balls.some(b=>b.state==='air')){
+      freezing=false;roundN++;logRound();nextRound+=ROUND;
+      if(stopAt!==null&&roundN>=stopAt){running=false;stopAt=null;const f=runDone;runDone=null;if(f)f();}
+    }
+    return;
+  }
+  if(t>=nextRound-1e-9){t=nextRound;freezing=true;}
+  if(events.length>5000) events=events.slice(-2000);
+}
+function runRounds(n){return new Promise(res=>{stopAt=roundN+n;runDone=res;running=true;});}
+function addN(side,n){for(let i=0;i<n;i++) spawnBall(side); return n;}
+function remN(side,n){
+  let k=0;
+  for(;k<n;k++){
+    const i=balls.findIndex(b=>b.state==='ground'&&!b.claim&&sideOf(b.x)===side);
+    if(i<0) break; balls.splice(i,1);
+  }
+  return k;
+}
+
+/* ---------- drawing ---------- */
+function fitCanvas(c){
+  const r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  const w=Math.max(1,Math.round(r.width*dpr)), h=Math.max(1,Math.round(r.height*dpr));
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+  return {ctx:c.getContext('2d'),w,h,dpr};
+}
+const field=$('field');
+function drawField(){
+  if(field.offsetParent===null) return;
+  const {ctx,w,h}=fitCanvas(field);
+  ctx.setTransform(1,0,0,1,0,0);
+  const portrait=h>w;
+  const P=portrait?(x,y)=>[y/H*w,x/W*h]:(x,y)=>[x/W*w,y/H*h];
+  const k=portrait?w/H*0.85:w/W;
+  ctx.fillStyle=col('--fieldR');portrait?ctx.fillRect(0,0,w,h/2):ctx.fillRect(0,0,w/2,h);
+  ctx.fillStyle=col('--fieldP');portrait?ctx.fillRect(0,h/2,w,h/2):ctx.fillRect(w/2,0,w/2,h);
+  ctx.save();ctx.globalAlpha=.13;ctx.fillStyle=col('--ink');
+  ctx.font=`700 ${Math.round((portrait?52:64)*k)}px "Barlow Condensed", Arial Narrow, sans-serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  if(portrait){ctx.fillText(cfg.names.R,w/2,h/4);ctx.fillText(cfg.names.P,w/2,h*3/4);}
+  else{ctx.fillText(cfg.names.R,w/4,h/2);ctx.fillText(cfg.names.P,w*3/4,h/2);}
+  ctx.restore();
+  ctx.strokeStyle=col('--muted');ctx.lineWidth=2*k;ctx.setLineDash([10*k,8*k]);
+  ctx.beginPath();portrait?(ctx.moveTo(0,h/2),ctx.lineTo(w,h/2)):(ctx.moveTo(w/2,0),ctx.lineTo(w/2,h));ctx.stroke();ctx.setLineDash([]);
+  const ball=col('--ball'),edge=col('--ballEdge'),shadow=col('--shadow');
+  const drawBall=(sx,sy,r)=>{ctx.beginPath();ctx.arc(sx,sy,r*k,0,7);ctx.fillStyle=ball;ctx.fill();ctx.lineWidth=1.3*k;ctx.strokeStyle=edge;ctx.stroke();};
+  for(const b of balls) if(b.state==='ground'){const [sx,sy]=P(b.x,b.y);drawBall(sx,sy,5);}
+  const cR=col('--react'),cP=col('--prod'),surf=col('--surface');
+  for(const p of players){
+    const [sx,sy]=P(p.x,p.y);
+    const bob=p.state==='seek'?Math.sin(p.ph*2)*1.5*k:0;
+    ctx.beginPath();ctx.ellipse(sx,sy+9*k,8*k,3*k,0,0,7);ctx.fillStyle=shadow;ctx.fill();
+    ctx.beginPath();ctx.arc(sx,sy+bob,9*k,0,7);ctx.fillStyle=p.side==='R'?cR:cP;ctx.fill();
+    ctx.lineWidth=2*k;ctx.strokeStyle=surf;ctx.stroke();
+  }
+  for(const b of balls) if(b.state==='held'){const [sx,sy]=P(b.x,b.y);drawBall(sx,sy,5);}
+  for(const b of balls) if(b.state==='air'){
+    const [sx,sy]=P(b.x,b.y);
+    ctx.beginPath();ctx.ellipse(sx,sy+3*k,5*k,2*k,0,0,7);ctx.fillStyle=shadow;ctx.fill();
+    drawBall(sx,sy-b.h*k*(portrait?0.7:1),5.5);
+  }
+}
+function niceStep(max,target){
+  const raw=max/target, mag=10**Math.floor(Math.log10(raw)), n=raw/mag;
+  return (n<=1?1:n<=2?2:n<=5?5:10)*mag;
+}
+function drawChart(){
+  const canvas=$('chartN');
+  if(canvas.offsetParent===null) return;
+  const {ctx,w,h,dpr}=fitCanvas(canvas);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W2=w/dpr,H2=h/dpr,L=38,R=12,T=8,B=34;
+  ctx.clearRect(0,0,W2,H2);
+  const lastX=log.length?log[log.length-1].x:0;
+  const xMax=Math.max(6,lastX+1);
+  const yMaxIn=Math.max(cfg.total,...log.map(e=>Math.max(e.R,e.P)));
+  const yStep=niceStep(yMaxIn,4), yMax=Math.ceil(yMaxIn/yStep)*yStep;
+  const X=v=>L+(v/xMax)*(W2-L-R), Y=v=>T+(1-v/yMax)*(H2-T-B);
+  ctx.font='11px "JetBrains Mono", ui-monospace, monospace';ctx.fillStyle=col('--muted');
+  ctx.strokeStyle=col('--line');ctx.lineWidth=1;
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let v=0;v<=yMax+1e-9;v+=yStep){
+    const y=Math.round(Y(v))+.5;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W2-R,y);ctx.stroke();
+    ctx.fillText(String(Math.round(v)),L-6,y);
+  }
+  const xStep=Math.max(1,niceStep(xMax,8));
+  ctx.textAlign='center';ctx.textBaseline='top';
+  for(let v=0;v<=xMax+1e-9;v+=xStep) ctx.fillText(String(Math.round(v)),X(v),H2-B+5);
+  ctx.fillText('round',L+(W2-L-R)/2,H2-14);
+  [['R',col('--react')],['P',col('--prod')]].forEach(([key,c])=>{
+    ctx.strokeStyle=c;ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();
+    log.forEach((e,j)=>{const x=X(e.x),y=Y(e[key]);j?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke();
+    for(const e of log){
+      ctx.beginPath();ctx.arc(X(e.x),Y(e[key]),3.5,0,7);
+      if(e.kind==='round'){ctx.fillStyle=c;ctx.fill();}
+      else{ctx.fillStyle=col('--surface');ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=c;ctx.stroke();}
+    }
+  });
+}
+function updateBoard(){
+  const c=counts(),rt=rates();
+  $('cR').textContent=c.R;$('cP').textContent=c.P;
+  $('rF').textContent=rt.f.toFixed(1)+' throws/s';
+  $('rR').textContent=rt.r.toFixed(1)+' throws/s';
+  $('roundNum').textContent=(running||freezing)?roundN+1:roundN;
+  $('clockStatus').textContent=freezing?'Time! Counting':running?'Running':'Paused';
+}
+let lastFrame=performance.now();
+function frame(now){
+  const real=Math.min(0.05,(now-lastFrame)/1000);lastFrame=now;
+  if(running){
+    const simDt=real*speed, n=Math.ceil(simDt/(1/120)), hh=simDt/n;
+    for(let i=0;i<n&&running;i++) step(hh);
+  } else {
+    for(const p of players){p.ph+=real*6; if(p.state==='idle'&&!p.ball) moveToward(p,p.hx+Math.sin(p.ph*0.3)*12,p.hy+Math.cos(p.ph*0.23)*12,40,real);}
+  }
+  drawField();
+  updateBoard();
+  requestAnimationFrame(frame);
+}
+window.addEventListener('resize',drawChart);
+
+/* =========================================================================================================
+   Game layer
+   ========================================================================================================= */
+const STD_NAMES={R:'REACTANTS',P:'PRODUCTS'};
+const BODY_NAMES={R:'CO₂',P:'H₂CO₃'};
+let sideWords={R:'reactant side',P:'product side'};
+const SKILLS=[
+  {id:'dyn',  name:'Equilibrium keeps moving',  what:'At equilibrium the counts hold steady while both sides keep throwing.'},
+  {id:'shift',name:'Call the shift',            what:'Which way an equilibrium moves after something is added or removed.'},
+  {id:'why',  name:'Explain it with throw rates',what:'Why it shifts: one side’s rate changes until the two rates match again.'},
+  {id:'k',    name:'Where it settles (K)',      what:'Where an equilibrium levels off, and what K says about it.'},
+  {id:'body', name:'Breathing and blood acidity',what:'The same calls applied to CO₂, carbonic acid and H⁺ in blood.'}
+];
+let score=[];
+function record(skill,ok,learn){score.push({skill,ok,learn});}
+
+const el=(tag,cls,html)=>{const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e;};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const fmt=v=>Math.round(v);
+const f1=v=>v.toFixed(1);
+const announce=m=>{$('announce').textContent='';setTimeout(()=>$('announce').textContent=m,30);};
+const rounds=()=>log.filter(e=>e.kind==='round');
+const lastRound=()=>rounds().slice(-1)[0];
+function avgLast(k){const r=rounds().slice(-k);return {R:r.reduce((s,e)=>s+e.R,0)/r.length,P:r.reduce((s,e)=>s+e.P,0)/r.length,from:r[0].n,to:r[r.length-1].n};}
+/* throw rates in the first counted round after the last change */
+function firstRates(){
+  let i=log.length-1; while(i>=0&&log[i].kind!=='change') i--;
+  const e=log.slice(i+1).find(x=>x.kind==='round'); return e||lastRound();
+}
+
+function setNames(body){
+  cfg.names=body?BODY_NAMES:STD_NAMES;
+  sideWords=body?{R:'CO₂ side',P:'H₂CO₃ side'}:{R:'reactant side',P:'product side'};
+  $('nameR').textContent=$('legR').textContent=body?'CO₂ side':'Reactant side';
+  $('nameP').textContent=$('legP').textContent=body?'H₂CO₃ side':'Product side';
+}
+function setTrack(i){
+  document.querySelectorAll('#track li').forEach((li,j)=>{
+    li.dataset.state=j<i?'done':j===i?'now':'next';
+    li.querySelector('.pip').textContent=j<i?'✓':j+1;
+    li.setAttribute('aria-current',j===i?'step':'false');
+  });
+}
+function scene(tag,title,body){
+  $('sceneTag').textContent=tag;$('sceneTitle').textContent=title;$('sceneBody').innerHTML=body;
+}
+function status(s){$('runStatus').textContent=s;}
+let bannerTimer=null;
+function banner(text){
+  const b=$('banner');b.textContent=text;b.hidden=false;
+  clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.hidden=true,1800);
+}
+function showK(on){$('kPanel').hidden=!on;$('charts').classList.toggle('nok',!on);drawChart();}
+
+async function run(n,label){
+  speed=BASE_SPEED;$('skip').hidden=false;
+  status(label||'Running…');
+  await runRounds(n);
+  $('skip').hidden=true;speed=BASE_SPEED;
+  const e=lastRound();
+  status(`Stopped after round ${e.n}.`);
+  announce(`Round ${e.n}: ${sideWords.R} ${e.R}, ${sideWords.P} ${e.P}.`);
+}
+$('skip').onclick=()=>{speed=FAST_SPEED;$('skip').hidden=true;status('Skipping ahead…');};
+/* bring a fight to equilibrium quickly, then count from round 0 again */
+async function settle(o){
+  setup(o);
+  speed=FAST_SPEED;status('Settling to equilibrium…');
+  await runRounds(3);
+  speed=BASE_SPEED;restartLog();status('At equilibrium.');
+}
+function dump(side,n,verb){
+  const k=verb==='add'?addN(side,n):remN(side,n);
+  const label=`${verb==='add'?'+':'−'}${k} ${verb==='add'?'to':'from'} ${sideWords[side]}`;
+  logChange(label);banner(label);
+  return k;
+}
+
+/* feedback box: icon + verdict word + headline + reason */
+function fbBox(state,head,body){
+  const v={ok:['✓','Right'],part:['◐','Partly right'],bad:['✕','Not quite']}[state];
+  const d=el('div','fb '+state);
+  d.append(el('div','ic',v[0]));
+  const tx=el('div','txt');
+  tx.append(el('div','verdict',v[1]),el('p','head',head));
+  if(body) tx.append(el('p','',body));
+  d.append(tx);
+  return d;
+}
+
+/* a call: one or more rows of options, locked together; optional run after locking; then feedback */
+function call(q){
+  return new Promise(resolve=>{
+    const box=$('call');box.innerHTML='';
+    box.append(el('p','prompt',q.prompt));
+    const picks=q.rows.map(()=>null);
+    let locked=false;
+    const lock=el('button','primary','Lock in my call');lock.disabled=true;
+    const groups=q.rows.map((row,i)=>{
+      const wrap=el('div','qrow');
+      if(row.label) wrap.append(el('div','rowlab',row.label));
+      const g=el('div','opts'+(row.inline?' inline':''));
+      g.setAttribute('role','radiogroup');g.setAttribute('aria-label',row.label||q.prompt.replace(/<[^>]+>/g,''));
+      const opts=row.shuffle?shuffle(row.opts.slice()):row.opts;
+      opts.forEach(o=>{
+        const b=el('button','opt');b.type='button';b.dataset.id=o.id;
+        b.setAttribute('role','radio');b.setAttribute('aria-checked','false');
+        b.innerHTML=`<span class="mark" aria-hidden="true"></span><span>${o.t}</span>`;
+        b.onclick=()=>{
+          if(locked) return;
+          picks[i]=o.id;
+          g.querySelectorAll('.opt').forEach(x=>x.setAttribute('aria-checked',x===b?'true':'false'));
+          lock.disabled=picks.some(p=>p===null);
+        };
+        g.append(b);
+      });
+      wrap.append(g);box.append(wrap);
+      return {g,wrap};
+    });
+    const foot=el('div','callfoot');foot.append(lock);box.append(foot);
+    lock.onclick=async()=>{
+      locked=true;lock.remove();
+      groups.forEach(({g})=>{g.classList.add('locked');g.querySelectorAll('.opt').forEach(b=>{b.setAttribute('aria-disabled','true');b.tabIndex=-1;});});
+      if(q.afterLock){foot.append(el('p','note','Call locked in. Watch the fight.'));$('field').scrollIntoView({block:'nearest',behavior:'smooth'});await q.afterLock();foot.innerHTML='';}
+      const fb=q.feedback(picks)||{};
+      let nOk=0;
+      q.rows.forEach((row,i)=>{
+        const ok=picks[i]===row.correct; if(ok) nOk++;
+        record(row.skill,ok,row.learn);
+        groups[i].g.querySelectorAll('.opt').forEach(b=>{
+          if(b.dataset.id===row.correct) b.classList.add('is-correct');
+          if(b.dataset.id===picks[i]) b.classList.add(ok?'pick-ok':'pick-bad');
+        });
+        const note=fb.rowNotes&&fb.rowNotes[i];
+        if(note) groups[i].wrap.append(el('p','rownote '+(ok?'ok':'bad'),note));
+      });
+      const state=fb.state||(nOk===q.rows.length?'ok':nOk===0?'bad':'part');
+      if(fb.head) box.append(fbBox(state,fb.head,fb.body));
+      const next=el('button','primary',q.next||'Next');
+      next.onclick=()=>resolve({picks,state});
+      const f2=el('div','callfoot');f2.append(next);box.append(f2);
+      next.focus({preventScroll:true});
+      box.scrollIntoView({block:'nearest',behavior:'smooth'});
+    };
+    box.scrollIntoView({block:'nearest',behavior:'smooth'});
+  });
+}
+/* an info card: level goal or wrap-up, with one button */
+function card(html,btn){
+  return new Promise(resolve=>{
+    const box=$('call');box.innerHTML='';
+    box.append(el('div','lesson',html));
+    const b=el('button','primary',btn||'Next');b.onclick=resolve;
+    const f=el('div','callfoot');f.append(b);box.append(f);
+    b.focus({preventScroll:true});
+  });
+}
+const pick=(ok,a,b)=>ok?a:b;
+
+/* ---------------------------------------- Level 1: Opening whistle ---------------------------------------- */
+async function level1(){
+  setTrack(0);setNames(false);showK(false);$('tray').innerHTML='';
+  setup({nR:10,nP:10,total:80,start:'R'});status('');
+  scene('Level 1 · Opening whistle','Match 1: even teams',
+    `<p>Ten throwers on each side. All 80 snowballs start on the <b class="r">reactant side</b>. Nobody has thrown yet.</p>`);
+  await card(`<h3>Your goal</h3><p>Call where Match 1 ends up, and what the teams are doing once the counts stop changing.</p>`,'Let’s go');
+
+  await call({
+    prompt:'Call it before the whistle: where will the counts end up?',
+    rows:[{skill:'k',correct:'b',learn:'Even teams level off near half and half. Neither side ever empties.',opts:[
+      {id:'a',t:'Nearly all 80 end up on the product side'},
+      {id:'b',t:'They level off near 40 and 40'},
+      {id:'c',t:'They keep swinging from one side to the other and never level off'}]}],
+    afterLock:()=>run(6,'Match 1 is running…'),
+    feedback:p=>{
+      const e=lastRound(),ok=p[0]==='b';
+      return {head:ok?'They leveled off near 40 and 40.':
+        p[0]==='a'?'The reactant side never empties: the product side throws snowballs back as soon as it has them.':
+        'After the first rush the counts stop trending. They only wobble by a few snowballs.',
+        body:`Your run, round 6: reactant side ${e.R}, product side ${e.P}. With even teams, each side ends up with about half.`};
+    }});
+
+  const r6=lastRound();
+  await call({
+    prompt:`The counts have leveled off. Look at the two <b>throws/s</b> numbers on the scoreboard. What are the teams doing now?`,
+    rows:[{skill:'dyn',correct:'b',shuffle:true,learn:'At equilibrium both sides keep throwing, at equal rates. The reaction never stops.',opts:[
+      {id:'a',t:'Nothing: they stopped once the counts leveled off'},
+      {id:'b',t:'Both still throwing, at about the same rate'},
+      {id:'c',t:'The reactant side is still throwing faster, since it started with every snowball'}]}],
+    feedback:p=>{
+      const ok=p[0]==='b';
+      return {head:ok?'Both sides are still throwing, at the same rate.':
+        p[0]==='a'?'Neither throws/s number is 0. The throwing never stopped.':'That was true in round 1. Now the two rates are about equal.',
+        body:`Reactant side ${f1(r6.f)} throws/s, product side ${f1(r6.r)} throws/s. Counts steady, throwing nonstop: forward rate = reverse rate. That is a dynamic equilibrium.`};
+    }});
+
+  const r0=rounds()[0],r1=rounds()[1],lost=r0.R-r1.R;
+  await call({
+    prompt:`In round 1 the reactant side lost ${lost} snowballs. In rounds 4–6 its count barely moved, with the same 10 throwers working just as hard. Why?`,
+    rows:[{skill:'why',correct:'b',shuffle:true,learn:'A count stops changing when snowballs leave that side as fast as they arrive.',opts:[
+      {id:'a',t:'The reactant throwers got tired and nearly stopped throwing'},
+      {id:'b',t:'The product side now throws snowballs back as fast as they arrive'},
+      {id:'c',t:'The reaction finished, so nothing is crossing anymore'}]}],
+    feedback:p=>{
+      const ok=p[0]==='b';
+      return {head:ok?'Snowballs now come back as fast as they leave.':
+        p[0]==='c'?'Snowballs are still crossing both ways. Check the throws/s numbers.':
+        `They were still throwing ${f1(r6.f)} per second. The count stopped changing because the other side caught up.`,
+        body:`In round 1 the product side had almost nothing to throw back (${f1(r1.r)} throws/s), so nearly every throw was a loss. By round 6 it was throwing ${f1(r6.r)} per second, about the same as the reactant side. Leaving = arriving, so the count holds steady.`};
+    }});
+
+  await card(`<h3>Level 1 wrap-up</h3><p><b>Equilibrium</b> is when the counts stop changing because each side throws snowballs across as fast as it receives them. The throwing never stops: the <b>forward rate equals the reverse rate</b>.</p>`,'On to Level 2');
+}
+
+/* ---------------------------------------- Level 2: Dump truck ---------------------------------------- */
+const DUMPS={
+  addP:{kind:'add',side:'P',n:50,correct:'L',text:'Dump 50 extra snowballs onto the <b class="p">product side</b>.'},
+  addR:{kind:'add',side:'R',n:50,correct:'R',text:'Dump 50 extra snowballs onto the <b class="r">reactant side</b>.'},
+  remP:{kind:'rem',side:'P',n:30,correct:'R',text:'Take 30 snowballs away from the <b class="p">product side</b>.'},
+  remR:{kind:'rem',side:'R',n:30,correct:'L',text:'Take 30 snowballs away from the <b class="r">reactant side</b>.'},
+  water:{kind:'water',correct:'N',text:'Pour more water onto the field. Water is the liquid all around, not a snowball.'}
+};
+const SHIFT_OPTS=[
+  {id:'L',t:'Shift left: overall toward the <b class="r">reactant side</b>'},
+  {id:'R',t:'Shift right: overall toward the <b class="p">product side</b>'},
+  {id:'N',t:'No shift: the counts just wobble'}];
+const SHIFT_WORD={L:'left',R:'right',N:'no shift'};
+async function level2(){
+  setTrack(1);setNames(false);showK(false);
+  const order=['addP',...shuffle(['addR','remP','remR','water'])];
+  const tray=$('tray');tray.innerHTML='';
+  const chips=order.map((k,i)=>{const c=el('span','chip',`Dump ${i+1}`);tray.append(c);return c;});
+  scene('Level 2 · Dump truck','Disturb the equilibrium','<p>Each dump starts from an even fight sitting at equilibrium, near 40 and 40.</p>');
+  await card(`<h3>Your goal</h3><p>Five dumps, in a random order. For each one, call which way the fight will <b>shift</b> before it runs, then explain why it went that way.</p><p>If snowballs move overall toward the reactant side, the equilibrium has shifted <b>left</b>. Toward the product side is a shift <b>right</b>.</p>`,'First dump');
+  let askedHalf=false;
+  for(let i=0;i<order.length;i++){
+    const d=DUMPS[order[i]];
+    chips[i].classList.add('now');
+    scene(`Level 2 · Dump ${i+1} of ${order.length}`,'Disturb the equilibrium',`<p>The fight is at equilibrium. Then: ${d.text}</p>`);
+    $('call').innerHTML='';
+    await settle({nR:10,nP:10,total:80,start:'S'});
+    const pre=lastRound();
+    let moved=0;
+    if(d.kind==='water'){logChange('+ water');banner('+ water (not a snowball)');}
+    else moved=dump(d.side,d.n,d.kind==='add'?'add':'remove');
+    const just=log[log.length-1];
+    status(`Just after: ${sideWords.R} ${just.R}, ${sideWords.P} ${just.P}.`);
+    const rule=d.kind==='add'?`Add to one side, and the equilibrium shifts <b>away</b> from that side.`:
+      d.kind==='rem'?`Remove from one side, and the equilibrium shifts <b>toward</b> that side, partly refilling it.`:
+      `Water is not a snowball. There is so much of it that adding more doesn’t change how concentrated it is, so nothing shifts.`;
+    const learnDir=d.kind==='add'?'Adding to a side shifts the equilibrium away from that side.':
+      d.kind==='rem'?'Removing from a side shifts the equilibrium toward that side.':'Adding water (the liquid all around) doesn’t shift the equilibrium.';
+
+    const r1=await call({
+      prompt:'Call the shift: over the next few rounds, which way will snowballs move overall?',
+      rows:[{skill:'shift',correct:d.correct,learn:learnDir,opts:SHIFT_OPTS}],
+      afterLock:()=>run(5,'Running five rounds…'),
+      feedback:p=>{
+        const e=lastRound(),ok=p[0]===d.correct;
+        const dR=e.R-just.R,dP=e.P-just.P;
+        const moveTxt=d.kind==='water'?
+          `No trend: from ${just.R} and ${just.P} to ${e.R} and ${e.P} after five rounds, just wobbles.`:
+          `Snowballs moved toward the ${dR>0?'reactant':'product'} side: reactant ${just.R} → ${e.R}, product ${just.P} → ${e.P} after five rounds.`;
+        const head=ok?(d.correct==='N'?'No shift.':`Shift ${SHIFT_WORD[d.correct]}.`):
+          (d.correct==='N'?`It didn’t shift ${SHIFT_WORD[p[0]]}: nothing changed that matters to the fight.`:
+           p[0]==='N'?`It did shift: ${SHIFT_WORD[d.correct]}.`:`It shifted the other way: ${SHIFT_WORD[d.correct]}.`);
+        return {head,body:moveTxt+' '+rule.replace(/<[^>]+>/g,'')};
+      }});
+
+    let whyOk=null;
+    if(d.kind!=='water'){
+      const fr=firstRates(),sR=d.side==='R'?fr.f:fr.r,oR=d.side==='R'?fr.r:fr.f;
+      const pR=d.side==='R'?pre.f:pre.r;
+      const S=sideWords[d.side],O=sideWords[d.side==='R'?'P':'R'];
+      const opts=d.kind==='add'?[
+        {id:'ok',t:`With more snowballs in reach, the ${S} threw faster than the ${O}. More went across than came back until the two rates were equal again.`},
+        {id:'stop',t:`The ${O} had to stop throwing for a while to make room.`},
+        {id:'eq',t:`The two sides always have to end up with equal counts, so the extra snowballs spread out.`}]:[
+        {id:'ok',t:`With fewer snowballs in reach, the ${S} threw slower. Snowballs arrived faster than they left until the two rates were equal again.`},
+        {id:'hard',t:`The ${O} threw harder on purpose to fill the gap.`},
+        {id:'eq',t:`The two sides always have to end up with equal counts, so snowballs moved to even them out.`}];
+      const r2=await call({
+        prompt:'Why did it go that way? Look at what happened to the throw rates.',
+        rows:[{skill:'why',correct:'ok',shuffle:true,learn:'A shift happens because one side’s throw rate changes, so more goes one way than the other until the rates match again.',opts}],
+        feedback:p=>{
+          const ok=p[0]==='ok';
+          const evid=`Before the dump the ${S} threw about ${f1(pR)}/s. In the first round after it, ${f1(sR)}/s, against ${f1(oR)}/s from the ${O}.`;
+          const head=ok?`The ${S}’s rate ${d.kind==='add'?'jumped':'dropped'}, and the counts moved until the rates matched.`:
+            p[0]==='eq'?'They ended near equal only because these teams are even. In Level 3, uneven teams settle far from equal. The cause is the throw rates.':
+            p[0]==='stop'?`The ${O} never stopped. What changed was the ${S}’s rate.`:
+            `Nobody throws harder on purpose. The ${O} kept throwing at its usual pace; the ${S} slowed down.`;
+          return {head,body:evid};
+        }});
+      whyOk=r2.state==='ok';
+    }
+
+    if(d.kind==='add'&&d.side==='P'&&!askedHalf){
+      askedHalf=true;
+      const e=lastRound(),gain=e.R-pre.R;
+      await call({
+        prompt:`Of the 50 snowballs you dumped on the product side, about how many ended up on the reactant side once it settled?`,
+        rows:[{skill:'why',correct:'b',learn:'The fight undoes part of a disturbance, not all of it: about half of the 50 moved.',opts:[
+          {id:'a',t:'All 50: the product side went back to where it was'},
+          {id:'b',t:'About half of them'},
+          {id:'c',t:'None: they all stayed on the product side'}],inline:false}],
+        feedback:p=>{
+          const ok=p[0]==='b';
+          return {head:ok?'About half moved. The fight undid part of the dump, not all of it.':
+            p[0]==='a'?'The product side ended higher than before the dump. Only part of the 50 moved.':'Some did move: the reactant side gained snowballs.',
+            body:`Reactant side before the dump: ${pre.R}. After five rounds: ${e.R}, a gain of ${gain}. Both sides end higher than before, because there are 130 snowballs now.`};
+        }});
+    }
+    const dirOk=r1.state==='ok';
+    const st=d.kind==='water'?(dirOk?'ok':'bad'):(dirOk&&whyOk?'ok':(dirOk||whyOk)?'part':'bad');
+    chips[i].className='chip '+st;
+    chips[i].textContent=`Dump ${i+1} ${{ok:'✓',part:'◐',bad:'✕'}[st]}`;
+    chips[i].setAttribute('aria-label',`Dump ${i+1}: ${{ok:'right',part:'partly right',bad:'not right'}[st]}`);
+  }
+  await card(`<h3>Level 2 wrap-up: Le Châtelier’s principle</h3><p>When a system at equilibrium is disturbed, it shifts in the direction that <b>partly undoes</b> the disturbance. Add something, and it shifts <b>away</b> from the side you added to. Remove something, and it shifts <b>toward</b> the side you removed from.</p><p>The reason is always the rates: the side you changed throws faster or slower until the two rates match again.</p>`,'On to Level 3');
+}
+
+/* ---------------------------------------- Level 3: Uneven teams ---------------------------------------- */
+const kRows=[];
+function addK(label){
+  const a=avgLast(3),K=a.R>0?a.P/a.R:Infinity;
+  kRows.push({label,R:a.R,P:a.P,K});
+  $('kBody').innerHTML=kRows.map(r=>`<tr><td>${r.label}</td><td class="r-t">${f1(r.R)}</td><td class="p-t">${f1(r.P)}</td><td><b>${Number.isFinite(r.K)?r.K.toFixed(2):'∞'}</b></td></tr>`).join('');
+  return K;
+}
+async function level3(){
+  setTrack(2);setNames(false);$('tray').innerHTML='';kRows.length=0;$('kBody').innerHTML='';showK(false);
+  setup({nR:4,nP:16,total:80,start:'R'});status('');
+  scene('Level 3 · Uneven teams','Match 3: 4 v 16',`<p>Now one direction is easier than the other. <b class="r">4 throwers</b> on the reactant side, <b class="p">16 throwers</b> on the product side. All 80 snowballs start on the reactant side.</p>`);
+  await card(`<h3>Your goal</h3><p>Call where uneven teams level off, check the throw rates, and work out what the equilibrium constant <b>K</b> tells you.</p>`,'Let’s go');
+
+  await call({
+    prompt:'Call it: once the counts level off, which side will have more snowballs?',
+    rows:[{skill:'k',correct:'R',learn:'The side with fewer throwers ends up holding more snowballs.',opts:[
+      {id:'R',t:'The <b class="r">reactant side</b> (4 throwers)'},
+      {id:'P',t:'The <b class="p">product side</b> (16 throwers)'},
+      {id:'E',t:'About equal'}]}],
+    afterLock:()=>run(8,'Match 3 is running…'),
+    feedback:p=>{
+      const a=avgLast(3),ok=p[0]==='R';
+      return {head:ok?'The reactant side ends up with more.':
+        p[0]==='P'?'Sixteen throwers clear the product side fast, and four can’t send snowballs over as fast. They pile up on the reactant side.':
+        'Equal only happens with even teams. Here they pile up on the 4-thrower side.',
+        body:`Rounds ${a.from}–${a.to} averaged ${f1(a.R)} on the reactant side and ${f1(a.P)} on the product side. The counts still leveled off, so this is an equilibrium too, just not an equal one.`};
+    }});
+  const e8=lastRound();
+  await call({
+    prompt:'Look at the throws/s numbers now. Is the 16-thrower team throwing faster than the 4-thrower team?',
+    rows:[{skill:'dyn',correct:'b',shuffle:true,learn:'At equilibrium the rates are equal even when the amounts are not.',opts:[
+      {id:'a',t:'Yes, about 4 times as fast, since it has 4 times the throwers'},
+      {id:'b',t:'No, the two rates are about equal'},
+      {id:'c',t:'The 4-thrower side has stopped throwing'}]}],
+    feedback:p=>{
+      const ok=p[0]==='b';
+      return {head:ok?'Equal rates, very unequal amounts.':
+        p[0]==='a'?'Check the scoreboard: the two rates are close. More throwers doesn’t mean more throws.':'The 4 throwers are the busiest players on the field.',
+        body:`Reactant side ${f1(e8.f)}/s, product side ${f1(e8.r)}/s. The 4 throwers stand in a pile of about ${e8.R} snowballs and always have one in reach. The 16 share about ${e8.P} and mostly wait for one to land.`};
+    }});
+  const K1=addK('4 v 16');showK(true);
+
+  setup({nR:16,nP:4,total:80,start:'R'});status('');
+  scene('Level 3 · Uneven teams','Match 4: 16 v 4',`<p>Swap them: <b class="r">16 throwers</b> on the reactant side, <b class="p">4 throwers</b> on the product side. 80 snowballs start on the reactant side.</p>`);
+  await call({
+    prompt:'Call it: which side ends up with more?',
+    rows:[{skill:'k',correct:'P',learn:'The side with fewer throwers ends up holding more snowballs.',opts:[
+      {id:'R',t:'The <b class="r">reactant side</b> (16 throwers)'},
+      {id:'P',t:'The <b class="p">product side</b> (4 throwers)'},
+      {id:'E',t:'About equal'}]}],
+    afterLock:()=>run(8,'Match 4 is running…'),
+    feedback:p=>{
+      const a=avgLast(3),ok=p[0]==='P';
+      return {head:ok?'The product side ends up with more: the mirror image of 4 v 16.':'It’s the mirror image of 4 v 16: snowballs pile up on the 4-thrower side, now the product side.',
+        body:`Rounds ${a.from}–${a.to} averaged ${f1(a.R)} on the reactant side and ${f1(a.P)} on the product side.`};
+    }});
+  const K2=addK('16 v 4');
+
+  await call({
+    prompt:`The K table shows K ≈ ${K2.toFixed(1)} for 16 v 4 and K ≈ ${K1.toFixed(2)} for 4 v 16. What does <b>K &gt; 1</b> tell you?`,
+    rows:[{skill:'k',correct:'a',shuffle:true,learn:'K > 1 means more products at equilibrium, K < 1 more reactants. The rates are equal either way.',opts:[
+      {id:'a',t:'There are more products than reactants at equilibrium'},
+      {id:'b',t:'The forward reaction is faster than the reverse reaction at equilibrium'},
+      {id:'c',t:'The reaction went to completion'}]}],
+    feedback:p=>{
+      const ok=p[0]==='a',last=kRows[1];
+      return {head:ok?'K > 1: more products. K < 1: more reactants.':
+        p[0]==='b'?'At equilibrium the two rates are equal, whatever K is. K describes the amounts, not the rates.':
+        `The reaction didn’t go to completion: about ${fmt(last.R)} snowballs were still on the reactant side.`,
+        body:'A tiny K, like 0.001, means almost all reactants. A huge K means almost all products.'};
+    }});
+
+  await call({
+    prompt:'In Level 2, dumping 50 snowballs into an even match moved the counts from about 40 and 40 to about 65 and 65. Did that change K?',
+    rows:[{skill:'k',correct:'a',learn:'Adding or removing snowballs shifts the equilibrium but does not change K. Only changing the teams changed K.',opts:[
+      {id:'a',t:'No, K stayed about 1'},
+      {id:'b',t:'Yes, K went up because there are more snowballs'},
+      {id:'c',t:'Yes, K went down because the product side lost snowballs'}]}],
+    feedback:p=>{
+      const ok=p[0]==='a';
+      return {head:ok?'K stayed about 1.':'65 ÷ 65 is still about 1, the same ratio as 40 ÷ 40.',
+        body:'Adding or removing snowballs shifts the equilibrium but leaves K alone. What changed K was the teams: how easily each direction goes.'};
+    }});
+  await card(`<h3>Level 3 wrap-up</h3><p><b>Equal rates do not mean equal amounts.</b> At equilibrium the forward and reverse rates are always equal, but the amounts can be far apart.</p><p><b>K</b> = product ÷ reactant once things level off. K &gt; 1, more products; K &lt; 1, more reactants. Dumping or removing snowballs shifts the equilibrium; it does not change K.</p>`,'On to Level 4');
+}
+
+/* ---------------------------------------- Level 4: In the body ---------------------------------------- */
+const UPDOWN=[{id:'up',t:'Rises'},{id:'down',t:'Falls'},{id:'same',t:'Stays the same'}];
+const LR=[{id:'R',t:'Right'},{id:'L',t:'Left'},{id:'N',t:'No shift'}];
+const ACID=[{id:'more',t:'More acidic'},{id:'less',t:'Less acidic'}];
+const CASES=[
+  {who:'Pneumonia',what:'Fluid in the lungs. The patient can’t breathe deeply or fully push air out.',
+   dump:['R','add',30],caption:'CO₂ builds up',
+   rows:[
+    {label:'CO₂ in the blood',opts:UPDOWN,correct:'up',why:'Less CO₂ is breathed out than the cells make, so it builds up.'},
+    {label:'The equilibria shift',opts:LR,correct:'R',why:'Adding a reactant shifts away from it: more H₂CO₃, then more H⁺.'},
+    {label:'The blood becomes',opts:ACID,correct:'more',why:'More H⁺ means more acidic.'}]},
+  {who:'Panic attack',what:'Fast breathing, with more air breathed out than normal.',
+   dump:['R','rem',30],caption:'Extra CO₂ breathed out',
+   rows:[
+    {label:'CO₂ in the blood',opts:UPDOWN,correct:'down',why:'CO₂ is breathed out faster than the cells make it.'},
+    {label:'The equilibria shift',opts:LR,correct:'L',why:'Removing a reactant shifts toward it: H⁺ and HCO₃⁻ recombine to H₂CO₃, which breaks down to CO₂ and water.'},
+    {label:'The blood becomes',opts:ACID,correct:'less',why:'That shift uses up H⁺, so the blood is less acidic.'}]},
+  {who:'Opioid overdose',what:'The drug slows the breathing centre of the brain. Breathing is slow and shallow.',
+   dump:['R','add',30],caption:'CO₂ builds up',
+   rows:[
+    {label:'CO₂ in the blood',opts:UPDOWN,correct:'up',why:'Slow, shallow breathing removes less CO₂, so it builds up, just like pneumonia.'},
+    {label:'The equilibria shift',opts:LR,correct:'R',why:'Added reactant: the equilibria shift right, making more H₂CO₃ and H⁺.'},
+    {label:'The blood becomes',opts:ACID,correct:'more',why:'More H⁺, more acidic.'}]},
+  {who:'Kidney failure',what:'The kidneys stop removing acid, so H⁺ builds up in the blood.',
+   dump:['P','add',30],caption:'Extra H⁺ joins HCO₃⁻: more H₂CO₃',
+   rows:[
+    {label:'The extra H⁺ shifts the equilibria',opts:LR,correct:'L',why:'Adding a product shifts away from it: H⁺ joins HCO₃⁻ to make H₂CO₃, which breaks down to CO₂ and water.'},
+    {label:'To lower the acidity, the body breathes',opts:[{id:'fast',t:'Faster'},{id:'slow',t:'Slower'}],correct:'fast',why:'Breathing faster removes CO₂ from the left side, so the equilibria keep shifting left and use up more H⁺.'}]},
+  {who:'Diabetic ketoacidosis',what:'Acids made during uncontrolled diabetes add H⁺ to the blood. The patient is breathing deep and fast.',
+   dump:['R','rem',30],caption:'Deep, fast breathing removes CO₂',
+   rows:[
+    {label:'Deep, fast breathing helps because it',inline:false,opts:[
+      {id:'a',t:'Removes CO₂, so the equilibria shift left and use up H⁺'},
+      {id:'b',t:'Brings in more O₂, which neutralizes the H⁺'},
+      {id:'c',t:'Breathes the H⁺ out directly'}],correct:'a',why:'Only CO₂ leaves through the lungs. Removing it shifts the equilibria left, which uses up H⁺.'}]}
+];
+async function level4(){
+  setTrack(3);setNames(true);showK(false);
+  const tray=$('tray');tray.innerHTML='';
+  const chips=CASES.map(c=>{const x=el('span','chip',c.who);tray.append(x);return x;});
+  const eq=`<p class="eqn"><span>CO₂(g) + H₂O(l) ⇌</span> <span>H₂CO₃(aq) ⇌</span> <span>H⁺(aq) + HCO₃⁻(aq)</span></p>`;
+  scene('Level 4 · In the body','Same fight, real molecules',eq+`<p>The reactant side is now <b class="r">CO₂</b> and the product side is <b class="p">H₂CO₃</b>. H⁺ follows H₂CO₃: more H₂CO₃ means more H⁺, and more H⁺ means more acidic blood. Breathing out removes CO₂.</p>`);
+  await card(`<h3>Your goal</h3><p>Five patients. For each, make every call on the chart, then watch the fight play it out. Use the same rules as Level 2: add to a side, shift away; remove from a side, shift toward it.</p>`,'First patient');
+  for(let i=0;i<CASES.length;i++){
+    const c=CASES[i];
+    chips[i].classList.add('now');
+    scene(`Level 4 · Patient ${i+1} of ${CASES.length}`,'Same fight, real molecules',
+      eq+`<div class="chart-card"><span class="lbl">Patient chart</span><span class="who">${c.who}</span><span>${c.what}</span></div>`);
+    $('call').innerHTML='';
+    await settle({nR:10,nP:10,total:80,start:'S'});
+    const res=await call({
+      prompt:`Make your calls for <b>${c.who.toLowerCase()}</b>.`,
+      rows:c.rows.map(r=>({label:r.label,opts:r.opts,correct:r.correct,skill:'body',learn:`${c.who}: ${r.why}`,inline:r.inline!==false})),
+      afterLock:async()=>{
+        await new Promise(r=>setTimeout(r,250));
+        dump(c.dump[0],c.dump[2],c.dump[1]==='add'?'add':'remove');banner(c.caption);
+        await new Promise(r=>setTimeout(r,900));
+        await run(4,`${c.caption}. Running…`);
+      },
+      feedback:p=>{
+        const just=log.find(e=>e.kind==='change'),e=lastRound();
+        const n=c.rows.filter((r,j)=>p[j]===r.correct).length;
+        return {rowNotes:c.rows.map(r=>r.why),
+          head:n===c.rows.length?'Every call on the chart is right.':c.rows.length===1?'The note under your answer says why.':`${n} of ${c.rows.length} calls right. The notes under each row say why.`,
+          body:`In the model, after four rounds: CO₂ side ${just.R} → ${e.R}, H₂CO₃ side ${just.P} → ${e.P}.`};
+      }});
+    chips[i].className='chip '+res.state;
+    chips[i].textContent=`${c.who} ${{ok:'✓',part:'◐',bad:'✕'}[res.state]}`;
+  }
+}
+
+/* ---------------------------------------- report ---------------------------------------- */
+function report(){
+  setTrack(4);
+  $('game').hidden=true;$('report').hidden=false;
+  const tot=score.length,ok=score.filter(s=>s.ok).length;
+  $('repSummary').textContent=`You made ${tot} calls and got ${ok} right.`;
+  $('repSkills').innerHTML='';
+  for(const sk of SKILLS){
+    const s=score.filter(x=>x.skill===sk.id); if(!s.length) continue;
+    const n=s.filter(x=>x.ok).length,frac=n/s.length;
+    const w=frac===1?['ok','Solid']:frac>=0.6?['part','Getting there']:['bad','Review this'];
+    const d=el('div','skill');
+    d.innerHTML=`<div><div class="nm">${sk.name}</div><div class="note">${sk.what}</div></div>
+      <div style="text-align:right"><div class="ct">${n} / ${s.length}</div><div class="word ${w[0]}">${w[1]}</div></div>
+      <div class="pips" aria-hidden="true">${s.map(x=>x.ok?'<span class="y">✓</span>':'<span class="n">✕</span>').join('')}</div>`;
+    $('repSkills').append(d);
+  }
+  const miss=[...new Set(score.filter(s=>!s.ok).map(s=>s.learn))];
+  $('repReviewWrap').hidden=!miss.length;
+  $('repReview').innerHTML=miss.map(m=>`<li>${m}</li>`).join('');
+  $('report').scrollIntoView({block:'start',behavior:'smooth'});
+}
+
+const LEVEL_FNS=[level1,level2,level3,level4];
+async function play(from){
+  score=[];
+  $('intro').hidden=true;$('report').hidden=true;$('game').hidden=false;
+  window.scrollTo({top:0});
+  for(let i=from;i<LEVEL_FNS.length;i++) await LEVEL_FNS[i]();
+  report();
+}
+$('startBtn').onclick=()=>play(0);
+document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>play(+b.dataset.jump));
+$('againBtn').onclick=()=>play(0);
+
+setTrack(-1);
+setup({nR:10,nP:10,total:80,start:'R'});
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
