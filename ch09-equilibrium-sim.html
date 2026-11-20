@@ -40,7 +40,9 @@ header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
 .advgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}
 .row{display:flex;flex-direction:column;gap:4px}
 .row label{display:flex;justify-content:space-between;gap:8px;font-size:14px}
-.row output{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.row .lab{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+.num-in{width:4.6em;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;text-align:right;padding:4px 6px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.num-in:invalid{border-color:var(--prod)}
 input[type=range]{width:100%;accent-color:var(--ink)}
 input.r{accent-color:var(--react)} input.p{accent-color:var(--prod)}
 select{font-family:var(--body);font-size:14px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
@@ -130,16 +132,19 @@ tr.change td:first-child{font-family:var(--body);font-size:12px}
     <div class="advgrid">
       <fieldset>
         <legend class="lbl">Teams</legend>
-        <div class="row"><label for="aR">Throwers on reactant side <output id="aRo">10</output></label><input class="r" type="range" id="aR" min="1" max="30" value="10"></div>
-        <div class="row"><label for="aP">Throwers on product side <output id="aPo">10</output></label><input class="p" type="range" id="aP" min="1" max="30" value="10"></div>
+        <div class="row"><div class="lab"><label for="aRn" id="aRl">Throwers on reactant side</label><input class="num-in" type="number" id="aRn" inputmode="numeric" min="1" max="30" step="1" value="10"></div>
+          <input class="r" type="range" id="aR" min="1" max="30" value="10" aria-labelledby="aRl"></div>
+        <div class="row"><div class="lab"><label for="aPn" id="aPl">Throwers on product side</label><input class="num-in" type="number" id="aPn" inputmode="numeric" min="1" max="30" step="1" value="10"></div>
+          <input class="p" type="range" id="aP" min="1" max="30" value="10" aria-labelledby="aPl"></div>
         <p class="note">Team changes take effect right away, even mid-fight.</p>
       </fieldset>
       <fieldset>
         <legend class="lbl">Snowballs</legend>
-        <div class="row"><label for="aTot">Snowballs at the start <output id="aToto">80</output></label><input type="range" id="aTot" min="20" max="200" step="10" value="80"></div>
-        <div class="row"><label for="aStart">Start them on</label>
+        <div class="row"><div class="lab"><label for="aTotn" id="aTotl">Snowballs at the start</label><input class="num-in" type="number" id="aTotn" inputmode="numeric" min="20" max="200" step="1" value="80"></div>
+          <input type="range" id="aTot" min="20" max="200" step="1" value="80" aria-labelledby="aTotl"></div>
+        <div class="row"><label class="lab" for="aStart">Start them on</label>
           <select id="aStart"><option value="R">Reactant side</option><option value="P">Product side</option><option value="S">Split evenly</option></select></div>
-        <div class="row"><label for="aChg">Disturb buttons add or remove</label>
+        <div class="row"><label class="lab" for="aChg">Disturb buttons add or remove</label>
           <select id="aChg"><option value="10">10 snowballs</option><option value="20">20 snowballs</option><option value="50" selected>50 snowballs</option></select></div>
         <p class="note">Changing the start count or side starts the match over.</p>
       </fieldset>
@@ -507,9 +512,9 @@ document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
 /* ---------- advanced options ---------- */
 const showIds={counts:'shCounts',rates:'shRates',log:'shLog',graph:'shGraph',ratio:'shRatio',k:'shK'};
 function syncControls(){
-  $('aR').value=cfg.nR;$('aRo').textContent=cfg.nR;
-  $('aP').value=cfg.nP;$('aPo').textContent=cfg.nP;
-  $('aTot').value=cfg.total;$('aToto').textContent=cfg.total;
+  $('aR').value=$('aRn').value=cfg.nR;
+  $('aP').value=$('aPn').value=cfg.nP;
+  $('aTot').value=$('aTotn').value=cfg.total;
   $('aStart').value=cfg.start;$('aChg').value=String(cfg.change);
   $('aPause').checked=cfg.pause;
   for(const k in showIds) $(showIds[k]).checked=cfg.show[k];
@@ -540,9 +545,24 @@ function setAdvanced(on){
 }
 $('advOn').onchange=e=>setAdvanced(e.target.checked);
 $('advStd').onclick=toStandard;
-$('aR').oninput=e=>{cfg.nR=+e.target.value;$('aRo').textContent=cfg.nR;syncPlayers();markPreset();};
-$('aP').oninput=e=>{cfg.nP=+e.target.value;$('aPo').textContent=cfg.nP;syncPlayers();markPreset();};
-$('aTot').oninput=e=>{cfg.total=+e.target.value;$('aToto').textContent=cfg.total;reset();};
+/* each number setting has a slider and a typing box. Teams apply as the slider moves; the starting count restarts
+   the match, so it applies when the slider is let go. A typed value applies on Enter or on leaving the box and is
+   kept inside the allowed range. */
+function numSetting(key,ids,apply,liveSlider){
+  const sl=$(ids[0]), box=$(ids[1]);
+  const clamp=v=>Math.min(+box.max,Math.max(+box.min,Math.round(v)));
+  const commit=v=>{
+    v=clamp(v); box.value=sl.value=v;
+    if(cfg[key]!==v){cfg[key]=v;apply();}
+  };
+  sl.addEventListener('input',()=>{box.value=sl.value; if(liveSlider) commit(+sl.value);});
+  sl.addEventListener('change',()=>commit(+sl.value));
+  box.addEventListener('change',()=>{const v=parseFloat(box.value); if(Number.isFinite(v)) commit(v); else box.value=cfg[key];});
+  box.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();box.blur();}});
+}
+numSetting('nR',['aR','aRn'],()=>{syncPlayers();markPreset();},true);
+numSetting('nP',['aP','aPn'],()=>{syncPlayers();markPreset();},true);
+numSetting('total',['aTot','aTotn'],()=>reset(),false);
 $('aStart').onchange=e=>{cfg.start=e.target.value;reset();};
 $('aChg').onchange=e=>{cfg.change=+e.target.value;syncControls();};
 $('aPause').onchange=e=>{cfg.pause=e.target.checked;};
