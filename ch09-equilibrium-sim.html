@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Layout: match picker, scoreboard over the field, run controls, disturb buttons, then the round log and the graph */
+/* Layout: match picker (+ hidden advanced options), scoreboard over the field, run controls, disturb buttons, then the round log and the graph */
 :root{
   --bg:#eaf0f5; --surface:#ffffff; --ink:#15202b; --muted:#566473; --line:#c9d4de;
   --react:#2c69aa; --prod:#bf4f2a;
@@ -31,7 +31,24 @@
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:1000px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
 h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1;margin:0;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-start;justify-content:space-between}
+header .intro{min-width:0;flex:1 1 420px}
 header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.advtoggle{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.advtoggle input{accent-color:var(--ink);margin:0}
+.adv{display:flex;flex-direction:column;gap:12px;border:1px dashed var(--muted);border-radius:12px;padding:12px}
+.advgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}
+.row{display:flex;flex-direction:column;gap:4px}
+.row label{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.row output{font-family:var(--mono);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--ink)}
+input.r{accent-color:var(--react)} input.p{accent-color:var(--prod)}
+select{font-family:var(--body);font-size:14px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--ink);margin-top:3px}
+.advfoot{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.kbig{font-family:var(--display);font-weight:700;font-size:48px;line-height:1;font-variant-numeric:tabular-nums}
+.keq{font-size:13px;color:var(--muted);margin:0}
 .lbl{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--muted)}
 
 .board{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
@@ -49,7 +66,7 @@ header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
 .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 button{font-family:var(--body);font-size:14px;font-weight:700;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer}
 button:hover{border-color:var(--muted)}
-button:focus-visible{outline:2px solid var(--react);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--react);outline-offset:2px}
 button:disabled{opacity:.45;cursor:not-allowed}
 button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);min-width:96px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -77,6 +94,8 @@ legend{padding:0 4px}
 .chart{width:100%;height:260px;display:block}
 
 .log{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.log.withk{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+@media (max-width:640px){.log.withk{grid-template-columns:minmax(0,1fr)}}
 .tablewrap{max-height:300px;overflow:auto}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
 th{position:sticky;top:0;background:var(--surface);text-align:right;font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
@@ -93,8 +112,11 @@ tr.change td:first-child{font-family:var(--body);font-size:12px}
 <body>
 <div class="wrap">
   <header>
-    <h1>Equilibrium Snowball Fight</h1>
-    <p>Two teams throw snowballs across the line. Each team tries to keep its own side clear. The fight pauses after every 5-second round so you can write down the counts.</p>
+    <div class="intro">
+      <h1>Equilibrium Snowball Fight</h1>
+      <p>Two teams throw snowballs across the line. Each team tries to keep its own side clear. The fight pauses after every 5-second round so you can write down the counts.</p>
+    </div>
+    <label class="advtoggle" for="advOn"><input type="checkbox" id="advOn"> Advanced options</label>
   </header>
 
   <div class="presets" role="group" aria-label="Match">
@@ -103,6 +125,44 @@ tr.change td:first-child{font-family:var(--body);font-size:12px}
     <button data-preset="4,16" aria-pressed="false">Few on reactant side <b>4 v 16</b></button>
     <button data-preset="16,4" aria-pressed="false">Few on product side <b>16 v 4</b></button>
   </div>
+
+  <section class="adv" id="adv" hidden aria-label="Advanced options">
+    <div class="advgrid">
+      <fieldset>
+        <legend class="lbl">Teams</legend>
+        <div class="row"><label for="aR">Throwers on reactant side <output id="aRo">10</output></label><input class="r" type="range" id="aR" min="1" max="30" value="10"></div>
+        <div class="row"><label for="aP">Throwers on product side <output id="aPo">10</output></label><input class="p" type="range" id="aP" min="1" max="30" value="10"></div>
+        <p class="note">Team changes take effect right away, even mid-fight.</p>
+      </fieldset>
+      <fieldset>
+        <legend class="lbl">Snowballs</legend>
+        <div class="row"><label for="aTot">Snowballs at the start <output id="aToto">80</output></label><input type="range" id="aTot" min="20" max="200" step="10" value="80"></div>
+        <div class="row"><label for="aStart">Start them on</label>
+          <select id="aStart"><option value="R">Reactant side</option><option value="P">Product side</option><option value="S">Split evenly</option></select></div>
+        <div class="row"><label for="aChg">Disturb buttons add or remove</label>
+          <select id="aChg"><option value="10">10 snowballs</option><option value="20">20 snowballs</option><option value="50" selected>50 snowballs</option></select></div>
+        <p class="note">Changing the start count or side starts the match over.</p>
+      </fieldset>
+      <fieldset>
+        <legend class="lbl">Running</legend>
+        <label class="check" for="aPause"><input type="checkbox" id="aPause" checked> Pause after every round</label>
+        <p class="note">With this off, the fight keeps going and logs each round on its own. A 4× speed is added under Speed.</p>
+      </fieldset>
+      <fieldset>
+        <legend class="lbl">Show</legend>
+        <label class="check" for="shCounts"><input type="checkbox" id="shCounts" checked> Counts on the scoreboard</label>
+        <label class="check" for="shRates"><input type="checkbox" id="shRates" checked> Throws per second</label>
+        <label class="check" for="shLog"><input type="checkbox" id="shLog" checked> Round log</label>
+        <label class="check" for="shGraph"><input type="checkbox" id="shGraph" checked> Graph</label>
+        <label class="check" for="shRatio"><input type="checkbox" id="shRatio"> P ÷ R column in the log</label>
+        <label class="check" for="shK"><input type="checkbox" id="shK"> K from the last 3 rounds</label>
+      </fieldset>
+    </div>
+    <div class="advfoot">
+      <button id="advStd">Back to standard settings</button>
+      <p class="note">Unchecking Advanced options also returns to the standard settings the worksheet uses.</p>
+    </div>
+  </section>
 
   <section class="board">
     <div class="score r"><span class="lbl">Reactant side</span><span class="num" id="cR">80</span><span class="rate" id="rF">0.0 throws/s</span></div>
@@ -120,6 +180,7 @@ tr.change td:first-child{font-family:var(--body);font-size:12px}
     <div class="seg" id="speed">
       <button data-s="1" aria-pressed="true">1×</button>
       <button data-s="2" aria-pressed="false">2×</button>
+      <button data-s="4" aria-pressed="false" id="s4" hidden>4×</button>
     </div>
   </div>
 
@@ -134,16 +195,23 @@ tr.change td:first-child{font-family:var(--body);font-size:12px}
     <p class="note">These work while the fight is paused. Each change is added to the round log.</p>
   </fieldset>
 
-  <section class="log">
-    <div class="panel">
+  <section class="log" id="logSec">
+    <div class="panel" id="logPanel">
       <h2>Round log</h2>
       <div class="tablewrap" id="tw">
-        <table><thead><tr><th>Round</th><th>Reactant side</th><th>Product side</th></tr></thead><tbody id="tbody"></tbody></table>
+        <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
       </div>
+    </div>
+    <div class="panel" id="kPanel" hidden>
+      <h2>K from the last 3 rounds</h2>
+      <div class="kbig" id="kVal">—</div>
+      <p class="keq" id="kRounds"></p>
+      <p class="keq" id="kDetail"></p>
+      <p class="keq">K = average on product side ÷ average on reactant side</p>
     </div>
   </section>
 
-  <section class="charts">
+  <section class="charts" id="graphSec">
     <div class="panel">
       <h2>Snowballs per round</h2>
       <div class="legend"><span><i style="background:var(--react)"></i>Reactant side</span><span><i style="background:var(--prod)"></i>Product side</span></div>
@@ -155,9 +223,14 @@ tr.change td:first-child{font-family:var(--body);font-size:12px}
 <script>
 (function(){
 const W=900,H=380,MID=W/2,M=16;
-const SPEED=170, WIND=0.2, RECOVER=0.1, RATE_WIN=4, ROUND=5, TOTAL=80, CHANGE=50;
-const SPOT=0.8/TOTAL; /* pickup rate per loose snowball (per second): a side throws faster the more snowballs it has */
-const cfg={nR:10,nP:10};
+const SPEED=170, WIND=0.2, RECOVER=0.1, RATE_WIN=4, ROUND=5;
+/* Standard settings: what the worksheet uses. Advanced options can change them; turning Advanced off restores them. */
+const STD={nR:10,nP:10,total:80,start:'R',change:50,pause:true,
+  show:{counts:true,rates:true,log:true,graph:true,ratio:false,k:false}};
+const cfg=JSON.parse(JSON.stringify(STD));
+/* pickup rate per loose snowball (per second), set from the starting total so throwers rarely run flat out:
+   a side throws faster the more snowballs it has */
+let spot=0.8/cfg.total;
 let players=[],balls=[],t=0,running=false,speed=1,events=[],log=[],nextRound=ROUND,freezing=false,roundN=0,counted=false;
 
 const $=id=>document.getElementById(id);
@@ -173,6 +246,14 @@ function spawnBall(side){
 function addPlayer(side){
   const hx=side==='R'?rand(M+40,MID-70):rand(MID+70,W-M-40), hy=rand(M+30,H-M-30);
   players.push({side,x:hx,y:hy,hx,hy,state:'idle',ball:null,timer:0,ph:rand(0,6.28)});
+}
+function removePlayer(side){
+  for(let i=players.length-1;i>=0;i--) if(players[i].side===side){release(players[i]);players.splice(i,1);return;}
+}
+function syncPlayers(){
+  const c=s=>players.filter(p=>p.side===s).length;
+  while(c('R')<cfg.nR) addPlayer('R'); while(c('R')>cfg.nR) removePlayer('R');
+  while(c('P')<cfg.nP) addPlayer('P'); while(c('P')>cfg.nP) removePlayer('P');
 }
 function release(p){
   const b=p.ball; if(!b) return;
@@ -194,9 +275,9 @@ function logChange(label){const c=counts(); log.push({kind:'change',label,x:roun
 
 function reset(){
   t=0;balls=[];players=[];events=[];log=[];nextRound=ROUND;freezing=false;roundN=0;counted=false;
-  for(let i=0;i<TOTAL;i++) spawnBall('R');
-  for(let i=0;i<cfg.nR;i++) addPlayer('R');
-  for(let i=0;i<cfg.nP;i++) addPlayer('P');
+  spot=0.8/cfg.total;
+  for(let i=0;i<cfg.total;i++) spawnBall(cfg.start==='S'?(i%2?'P':'R'):cfg.start);
+  syncPlayers();
   logRound(); setRunning(false);
 }
 
@@ -232,7 +313,7 @@ function step(dt){
         if(b.state!=='ground'||b.claim||sideOf(b.x)!==p.side) continue;
         n++; const d=(b.x-p.x)**2+(b.y-p.y)**2; if(d<bd){bd=d;best=b;}
       }
-      if(best&&Math.random()<1-Math.exp(-SPOT*n*dt)){best.claim=p;p.ball=best;p.state='seek';}
+      if(best&&Math.random()<1-Math.exp(-spot*n*dt)){best.claim=p;p.ball=best;p.state='seek';}
       else moveToward(p,p.hx+Math.sin(p.ph*0.3)*12,p.hy+Math.cos(p.ph*0.23)*12,40,dt);
     }
     if(p.state==='seek'){
@@ -252,7 +333,10 @@ function step(dt){
   }
   if(freezing){
     /* time called: wait for airborne snowballs to land, count, then pause for the student to record */
-    if(!balls.some(b=>b.state==='air')){freezing=false;roundN++;logRound();nextRound+=ROUND;counted=true;setRunning(false);}
+    if(!balls.some(b=>b.state==='air')){
+      freezing=false;roundN++;logRound();nextRound+=ROUND;
+      if(cfg.pause){counted=true;setRunning(false);}
+    }
     return;
   }
   if(t>=nextRound-1e-9){t=nextRound;freezing=true;}
@@ -322,7 +406,7 @@ function drawChart(){
   ctx.clearRect(0,0,W2,H2);
   const lastX=log.length?log[log.length-1].x:0;
   const xMax=Math.max(6,lastX+1);
-  const yMaxIn=Math.max(TOTAL,...log.map(e=>Math.max(e.R,e.P)));
+  const yMaxIn=Math.max(cfg.total,...log.map(e=>Math.max(e.R,e.P)));
   const yStep=niceStep(yMaxIn,4), yMax=Math.ceil(yMaxIn/yStep)*yStep;
   const X=v=>L+(v/xMax)*(W2-L-R), Y=v=>T+(1-v/yMax)*(H2-T-B);
   ctx.font='11px "JetBrains Mono", ui-monospace, monospace';ctx.fillStyle=col('--muted');
@@ -352,17 +436,35 @@ function drawChart(){
 const disturbIds=['addR','addP','remR','remP'];
 function updateUI(){
   const c=counts(),rt=rates();
-  $('cR').textContent=c.R;$('cP').textContent=c.P;
+  $('cR').textContent=cfg.show.counts?c.R:'?';$('cP').textContent=cfg.show.counts?c.P:'?';
   $('rF').textContent=rt.f.toFixed(1)+' throws/s';
   $('rR').textContent=rt.r.toFixed(1)+' throws/s';
   $('roundNum').textContent=(running||freezing)?roundN+1:roundN;
   $('status').textContent=freezing?'Time! Counting…':running?'Running':t===0?'Press Start':counted?'Counted. Press Resume':'Paused';
 }
+function kFromLog(){
+  let start=0;
+  for(let i=log.length-1;i>=0;i--) if(log[i].kind==='change'){start=i+1;break;}
+  const rs=log.slice(start).filter(e=>e.kind==='round'&&e.n>=1);
+  if(rs.length<3) return {need:start>0?'Shows up after 3 rounds have been counted since the last change.':'Shows up after 3 rounds have been counted.'};
+  const last=rs.slice(-3);
+  const aR=last.reduce((s,e)=>s+e.R,0)/3, aP=last.reduce((s,e)=>s+e.P,0)/3;
+  return {from:last[0].n,to:last[2].n,aR,aP,K:aR>0?aP/aR:Infinity};
+}
 function renderLog(){
+  const ratio=cfg.show.ratio, q=e=>`<td>${e.R?(e.P/e.R).toFixed(2):'∞'}</td>`;
+  $('thead').innerHTML=`<tr><th>Round</th><th>Reactant side</th><th>Product side</th>${ratio?'<th>P ÷ R</th>':''}</tr>`;
   $('tbody').innerHTML=log.map(e=>e.kind==='round'
-    ?`<tr><td>${e.n}</td><td class="r">${e.R}</td><td class="p">${e.P}</td></tr>`
-    :`<tr class="change"><td>${e.label}</td><td class="r">${e.R}</td><td class="p">${e.P}</td></tr>`).join('');
+    ?`<tr><td>${e.n}</td><td class="r">${e.R}</td><td class="p">${e.P}</td>${ratio?q(e):''}</tr>`
+    :`<tr class="change"><td>${e.label}</td><td class="r">${e.R}</td><td class="p">${e.P}</td>${ratio?q(e):''}</tr>`).join('');
   const tw=$('tw');tw.scrollTop=tw.scrollHeight;
+  const k=kFromLog();
+  if(k.need){$('kVal').textContent='—';$('kRounds').textContent=k.need;$('kDetail').textContent='';}
+  else{
+    $('kVal').textContent=Number.isFinite(k.K)?k.K.toFixed(2):'∞';
+    $('kRounds').textContent=`Rounds ${k.from}–${k.to}`;
+    $('kDetail').textContent=`Average on reactant side: ${k.aR.toFixed(1)} · Average on product side: ${k.aP.toFixed(1)}`;
+  }
 }
 function setRunning(v){
   running=v; if(v) counted=false;
@@ -372,9 +474,10 @@ function setRunning(v){
 
 $('play').onclick=()=>setRunning(!running);
 $('reset').onclick=reset;
-document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>{
-  speed=+b.dataset.s;document.querySelectorAll('#speed button').forEach(x=>x.setAttribute('aria-pressed',x===b));
-});
+function setSpeed(v){
+  speed=v;document.querySelectorAll('#speed button').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.s===v));
+}
+document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.s));
 function addN(side,n){for(let i=0;i<n;i++) spawnBall(side); return n;}
 function remN(side,n){
   let k=0;
@@ -386,17 +489,65 @@ function remN(side,n){
 }
 function disturb(fn,side,verb){
   if(running||freezing) return;
-  const n=fn(side,CHANGE); if(!n) return;
+  const n=fn(side,cfg.change); if(!n) return;
   logChange(`${verb==='add'?'+':'−'}${n} ${verb==='add'?'to':'from'} ${side==='R'?'reactant':'product'} side`);
 }
 $('addR').onclick=()=>disturb(addN,'R','add');$('addP').onclick=()=>disturb(addN,'P','add');
 $('remR').onclick=()=>disturb(remN,'R','remove');$('remP').onclick=()=>disturb(remN,'P','remove');
+function markPreset(){
+  document.querySelectorAll('[data-preset]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.preset===`${cfg.nR},${cfg.nP}`));
+}
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
   const [r,p]=b.dataset.preset.split(',').map(Number);
   cfg.nR=r;cfg.nP=p;
-  document.querySelectorAll('[data-preset]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  syncControls();
   reset();
 });
+
+/* ---------- advanced options ---------- */
+const showIds={counts:'shCounts',rates:'shRates',log:'shLog',graph:'shGraph',ratio:'shRatio',k:'shK'};
+function syncControls(){
+  $('aR').value=cfg.nR;$('aRo').textContent=cfg.nR;
+  $('aP').value=cfg.nP;$('aPo').textContent=cfg.nP;
+  $('aTot').value=cfg.total;$('aToto').textContent=cfg.total;
+  $('aStart').value=cfg.start;$('aChg').value=String(cfg.change);
+  $('aPause').checked=cfg.pause;
+  for(const k in showIds) $(showIds[k]).checked=cfg.show[k];
+  $('addR').textContent=`+${cfg.change} to reactant side`;$('addP').textContent=`+${cfg.change} to product side`;
+  $('remR').textContent=`−${cfg.change} from reactant side`;$('remP').textContent=`−${cfg.change} from product side`;
+  markPreset();applyShow();
+}
+function applyShow(){
+  $('rF').hidden=$('rR').hidden=!cfg.show.rates;
+  $('logPanel').hidden=!cfg.show.log;
+  $('kPanel').hidden=!cfg.show.k;
+  $('logSec').hidden=!cfg.show.log&&!cfg.show.k;
+  $('logSec').classList.toggle('withk',cfg.show.log&&cfg.show.k);
+  $('graphSec').hidden=!cfg.show.graph;
+  renderLog();
+}
+function toStandard(){
+  const restart=cfg.nR!==STD.nR||cfg.nP!==STD.nP||cfg.total!==STD.total||cfg.start!==STD.start;
+  Object.assign(cfg,JSON.parse(JSON.stringify(STD)));
+  if(speed>2) setSpeed(2);
+  syncControls();
+  if(restart) reset();
+}
+function setAdvanced(on){
+  $('adv').hidden=!on;$('s4').hidden=!on;$('advOn').checked=on;
+  if(!on) toStandard();
+  try{history.replaceState(null,'',on?'#advanced':location.pathname+location.search);}catch(e){}
+}
+$('advOn').onchange=e=>setAdvanced(e.target.checked);
+$('advStd').onclick=toStandard;
+$('aR').oninput=e=>{cfg.nR=+e.target.value;$('aRo').textContent=cfg.nR;syncPlayers();markPreset();};
+$('aP').oninput=e=>{cfg.nP=+e.target.value;$('aPo').textContent=cfg.nP;syncPlayers();markPreset();};
+$('aTot').oninput=e=>{cfg.total=+e.target.value;$('aToto').textContent=cfg.total;reset();};
+$('aStart').onchange=e=>{cfg.start=e.target.value;reset();};
+$('aChg').onchange=e=>{cfg.change=+e.target.value;syncControls();};
+$('aPause').onchange=e=>{cfg.pause=e.target.checked;};
+for(const k in showIds) $(showIds[k]).onchange=e=>{cfg.show[k]=e.target.checked;applyShow();};
+window.addEventListener('hashchange',()=>setAdvanced(location.hash==='#advanced'));
 
 let last=performance.now();
 function frame(now){
@@ -410,7 +561,9 @@ function frame(now){
   updateUI();
   requestAnimationFrame(frame);
 }
+syncControls();
 reset();
+if(location.hash==='#advanced') setAdvanced(true);
 requestAnimationFrame(frame);
 })();
 </script>

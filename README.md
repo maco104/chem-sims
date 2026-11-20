@@ -5,6 +5,7 @@ with no sign-in:
 
 - Site: https://maco104.github.io/chem-sims/
 - Equilibrium Snowball Fight (Ch. 9): https://maco104.github.io/chem-sims/ch09-equilibrium-sim.html
+  (opens with Advanced options showing: https://maco104.github.io/chem-sims/ch09-equilibrium-sim.html#advanced)
 
 Each simulation is one self-contained HTML file.
 
