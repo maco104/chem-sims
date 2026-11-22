@@ -30,6 +30,7 @@
   --bg:#eaf0f5; --surface:#ffffff; --ink:#15202b; --muted:#566473; --line:#c9d4de;
   --react:#2c69aa; --prod:#bf4f2a;
   --fieldR:#e1ebf5; --fieldP:#f7e8e1; --ball:#ffffff; --ballEdge:#8fa0b1; --shadow:rgba(30,45,60,.18);
+  --hi:#d99a00;
   --ok:#1d6b40; --okbg:#e3f2e9; --part:#8a5300; --partbg:#fbf0dc; --bad:#a8231c; --badbg:#fbe5e3;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -39,6 +40,7 @@
   --bg:#0d131a; --surface:#151d27; --ink:#e4ebf2; --muted:#93a1b0; --line:#2a3645;
   --react:#6ea9e6; --prod:#ec8a63;
   --fieldR:#162539; --fieldP:#2d1d18; --ball:#f2f6fa; --ballEdge:#b9c7d4; --shadow:rgba(0,0,0,.45);
+  --hi:#ffd166;
   --ok:#5fc48a; --okbg:#12291c; --part:#e0a64a; --partbg:#2c2210; --bad:#f08a80; --badbg:#321715; color-scheme:dark}}
 
 *{box-sizing:border-box}
@@ -50,7 +52,7 @@ h2{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-sp
 h3{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:18px;margin:0}
 header{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;justify-content:space-between}
 header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
-.lbl{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--muted)}
+.lbl{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:14px;color:var(--muted)}
 b.r,.r-t{color:var(--react)} b.p,.p-t{color:var(--prod)}
 sub{font-size:.72em;line-height:0}
 
@@ -64,7 +66,7 @@ sub{font-size:.72em;line-height:0}
 @media (max-width:640px){.track .nm{display:none}.track li{padding:3px}}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.note{font-size:14px;color:var(--muted);margin:0}
+.note{font-size:15px;color:var(--muted);margin:0}
 p{margin:0}
 
 /* intro */
@@ -88,18 +90,18 @@ p{margin:0}
 .score.r{border-top:4px solid var(--react)} .score.p{border-top:4px solid var(--prod);text-align:right;align-items:flex-end}
 .num{font-family:var(--display);font-weight:700;font-size:clamp(38px,8vw,58px);line-height:1;font-variant-numeric:tabular-nums}
 .score.r .num{color:var(--react)} .score.p .num{color:var(--prod)}
-.rate{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rate{font-family:var(--mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 .clock{align-items:center;justify-content:center;text-align:center;width:120px}
 .clock .t{font-family:var(--display);font-weight:700;font-size:clamp(30px,6vw,40px);line-height:1;font-variant-numeric:tabular-nums}
-.clock .status{font-size:12px;color:var(--muted)}
+.clock .status{font-size:13px;color:var(--muted)}
 .fieldwrap{position:relative}
 #field{width:100%;aspect-ratio:900/380;display:block;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
-.banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:700;font-size:clamp(20px,4vw,30px);text-transform:uppercase;letter-spacing:.03em;padding:8px 16px;border-radius:8px;text-align:center;max-width:90%;box-shadow:0 6px 20px var(--shadow);animation:pop .25s ease-out}
+.banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);transition:left .2s,top .2s;background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:700;font-size:clamp(20px,4vw,30px);text-transform:uppercase;letter-spacing:.03em;padding:8px 16px;border-radius:8px;text-align:center;width:max-content;max-width:46%;box-shadow:0 6px 20px var(--shadow);animation:pop .25s ease-out}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.85);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 .runbar{display:flex;gap:10px;align-items:center;min-height:36px}
-.runbar .status{color:var(--muted);font-size:14px;flex:1}
+.runbar .status{color:var(--muted);font-size:15px;flex:1}
 @media (max-width:600px){#field{aspect-ratio:380/440}}
-@media (max-width:480px){.board{gap:6px}.clock{width:84px;padding:6px}.score{padding:6px 10px}.rate{font-size:11px}}
+@media (max-width:480px){.board{gap:6px}.clock{width:84px;padding:6px}.score{padding:6px 10px}.rate{font-size:12px}}
 
 /* buttons */
 button{font-family:var(--body);font-size:15px;font-weight:700;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer}
@@ -113,18 +115,18 @@ button.ghost{font-weight:400;font-size:14px}
 /* the call: options are raised and tappable until locked; locked options go flat */
 .call{border-top:4px solid var(--ink)}
 .formula{display:flex;align-items:center;gap:.5em;margin:10px 0;font-size:18px;font-weight:700}
-.formula.small{font-size:14px;font-weight:400;margin:6px 0}
+.formula.small{font-size:15px;font-weight:400;margin:6px 0}
 .frac{display:inline-flex;flex-direction:column;align-items:stretch;text-align:center;line-height:1.3}
 .frac>span{padding:2px .4em}
 .frac>span:first-child{border-bottom:2px solid var(--ink)}
 .formula.small .frac>span:first-child{border-bottom-width:1px}
-.ctx{background:var(--bg);border-radius:8px;padding:8px 12px;font-size:14px;line-height:1.45}
+.ctx{background:var(--bg);border-radius:8px;padding:10px 14px;font-size:16px;line-height:1.5}
 .ctx .lbl{display:block;margin-bottom:2px}
 .call .prompt{font-size:17px;font-weight:700}
 .qrow{display:flex;flex-direction:column;gap:6px}
 .qrow+.qrow{border-top:1px dashed var(--line);padding-top:10px}
 .numlab{font-weight:700}
-.rowlab{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:14px}
+.rowlab{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:16px}
 .opts{display:flex;flex-direction:column;gap:6px}
 .opts.inline{flex-direction:row;flex-wrap:wrap}
 .opt{display:flex;gap:10px;align-items:flex-start;text-align:left;font-weight:400;border:1px solid var(--line);border-bottom-width:3px;padding:10px 12px;min-height:46px;line-height:1.35;position:relative}
@@ -142,7 +144,7 @@ button.ghost{font-weight:400;font-size:14px}
 .opt.pick-bad .mark::before{content:"✕"}
 .opt.is-correct:not(.pick-ok){border:2px dashed var(--ok)}
 .opt.is-correct:not(.pick-ok)::after{content:"Correct answer";font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:var(--ok);margin-left:auto;align-self:center;padding-left:8px;white-space:nowrap}
-.rownote{font-size:14px;margin:0;padding-left:30px}
+.rownote{font-size:16px;margin:0;padding-left:30px}
 .rownote.ok{color:var(--ok)} .rownote.bad{color:var(--bad)}
 .callfoot{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 
@@ -159,7 +161,7 @@ button.ghost{font-weight:400;font-size:14px}
 
 /* progress chips in levels 2 and 4 */
 .tray{display:flex;gap:6px;flex-wrap:wrap}
-.chip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}
+.chip{font-family:var(--mono);font-size:13px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}
 .chip.now{border-color:var(--ink);color:var(--ink);font-weight:700}
 .chip.ok{border-color:var(--ok);color:var(--ok)} .chip.part{border-color:var(--part);color:var(--part)} .chip.bad{border-color:var(--bad);color:var(--bad)}
 
@@ -168,32 +170,32 @@ button.ghost{font-weight:400;font-size:14px}
 .charts .wide{grid-column:span 2}
 @media (max-width:640px){.charts .wide{grid-column:auto}}
 .tablewrap{max-height:220px;overflow:auto}
-.logt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.logt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:15px}
 .logt th{position:sticky;top:0;background:var(--surface);text-align:right;font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--line)}
-.logt td{text-align:right;padding:4px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px}
+.logt td{text-align:right;padding:4px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:15px}
 .logt th:first-child,.logt td:first-child{text-align:left}
 .logt tr.change td{font-style:italic;background:var(--bg)}
-.logt tr.change td:first-child{font-family:var(--body);font-size:12px}
+.logt tr.change td:first-child{font-family:var(--body);font-size:14px}
 /* typed numbers */
 .numrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .numin{width:7em;font-family:var(--mono);font-size:18px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);border-bottom-width:3px;background:var(--surface);color:var(--ink);text-align:right}
 .numin:focus-visible{outline:3px solid var(--react);outline-offset:2px}
 .numin:disabled{border-bottom-width:1px;opacity:1}
-.numrow .nmark{font-weight:700;font-size:14px}
+.numrow .nmark{font-weight:700;font-size:15px}
 .numrow.ok .numin{border-color:var(--ok);background:var(--okbg)} .numrow.ok .nmark{color:var(--ok)}
 .numrow.part .numin{border-color:var(--part);background:var(--partbg)} .numrow.part .nmark{color:var(--part)}
 .numrow.bad .numin{border-color:var(--bad);background:var(--badbg)} .numrow.bad .nmark{color:var(--bad)}
 .rownote.part{color:var(--part)}
-.data{font-family:var(--mono);font-size:14px;background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:6px;display:grid;grid-template-columns:auto repeat(3,minmax(3em,auto));gap:2px 14px;justify-content:start;font-weight:400}
-.data b{font-family:var(--display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:12px;color:var(--muted)}
+.data{font-family:var(--mono);font-size:16px;background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:6px;display:grid;grid-template-columns:auto repeat(3,minmax(3em,auto));gap:2px 14px;justify-content:start;font-weight:400}
+.data b{font-family:var(--display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:13px;color:var(--muted)}
 /* pick-the-graph options */
 .opt svg{flex:none;width:132px;height:62px;border-radius:6px;background:var(--bg)}
 .opt span:has(svg){display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
 .chart{width:100%;height:200px;display:block}
 .kbig{font-family:var(--display);font-weight:700;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
-.ktable{width:100%;border-collapse:collapse;font-size:14px}
+.ktable{width:100%;border-collapse:collapse;font-size:15px}
 .ktable td,.ktable th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 .ktable th{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted)}
 .ktable td:first-child,.ktable th:first-child{text-align:left}
@@ -202,7 +204,7 @@ button.ghost{font-weight:400;font-size:14px}
 .skills{display:flex;flex-direction:column;gap:10px}
 .skill{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px}
 .skill .nm{font-weight:700}
-.skill .ct{font-family:var(--mono);font-size:14px}
+.skill .ct{font-family:var(--mono);font-size:15px}
 .skill .pips{grid-column:1/-1;display:flex;gap:4px;flex-wrap:wrap}
 .skill .pips span{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--surface)}
 .skill .pips .y{background:var(--ok)} .skill .pips .h{background:var(--part)} .skill .pips .n{background:var(--surface);border:2px solid var(--bad);color:var(--bad)}
@@ -210,7 +212,10 @@ button.ghost{font-weight:400;font-size:14px}
 .word.ok{color:var(--ok)} .word.part{color:var(--part)} .word.bad{color:var(--bad)}
 .review{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media (prefers-reduced-motion:reduce){.banner{animation:none}}
+@media (prefers-reduced-motion:reduce){.banner{animation:none;transition:none}}
+.banner.add{background:var(--hi);color:#15202b}
+.banner.rem{background:var(--bad);color:#fff}
+.logt tr.pre td{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -356,7 +361,7 @@ function release(p){
 }
 function counts(){
   let R=0,P=0;
-  for(const b of balls){const s=b.state==='air'?b.from:sideOf(b.x); s==='R'?R++:P++;}
+  for(const b of balls){if(b.state==='enter') continue; const s=b.state==='air'?b.from:sideOf(b.x); s==='R'?R++:P++;}
   return {R,P};
 }
 function rates(){
@@ -369,14 +374,14 @@ function logChange(label){const c=counts(); log.push({kind:'change',label,x:roun
 function renderLog(){
   const h=$('lhead'),b=$('lbody'); if(!h) return;
   h.innerHTML=`<tr><th>Round</th><th>${cfg.names===STD_NAMES?'Reactant':'CO₂'}</th><th>${cfg.names===STD_NAMES?'Product':'H₂CO₃'}</th></tr>`;
-  b.innerHTML=log.map(e=>e.kind==='round'?`<tr><td>${e.n}</td><td class="r-t">${e.R}</td><td class="p-t">${e.P}</td></tr>`
+  b.innerHTML=log.map(e=>e.kind==='round'?`<tr${e.n<0?' class="pre"':''}><td>${e.n<0?'before':e.n}</td><td class="r-t">${e.R}</td><td class="p-t">${e.P}</td></tr>`
     :`<tr class="change"><td>${e.label}</td><td class="r-t">${e.R}</td><td class="p-t">${e.P}</td></tr>`).join('');
   const tw=$('tw');tw.scrollTop=tw.scrollHeight;
 }
 
 function setup(o){
   Object.assign(cfg,o);
-  t=0;balls=[];players=[];events=[];log=[];nextRound=ROUND;freezing=false;roundN=0;running=false;
+  t=0;balls=[];players=[];events=[];log=[];nextRound=ROUND;freezing=false;roundN=0;running=false;tint=null;
   spot=0.8/cfg.total;
   for(let i=0;i<cfg.total;i++) spawnBall(cfg.start==='S'?(i%2?'P':'R'):cfg.start);
   for(let i=0;i<cfg.nR;i++) addPlayer('R');
@@ -448,6 +453,34 @@ function step(dt){
 }
 function runRounds(n){return new Promise(res=>{stopAt=roundN+n;runDone=res;running=true;});}
 function addN(side,n){for(let i=0;i<n;i++) spawnBall(side); return n;}
+/* animated changes (real time, so they run at the same pace even when the fight is paused):
+   added snowballs fly in from the outer edge of their side and glow for a few seconds; removed snowballs get a red
+   ring, then shrink and fade. The changed side flashes. */
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const nowS=()=>performance.now()/1000;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let tint=null;
+function addAnimated(side,n){
+  const t0=nowS(),gap=REDUCED?0:Math.min(0.025,1.2/n),dur=REDUCED?0.01:0.6;
+  for(let i=0;i<n;i++){
+    spawnBall(side);const b=balls[balls.length-1];
+    Object.assign(b,{state:'enter',t0:t0+i*gap,dur,sx:side==='R'?-30:W+30,sy:b.y+rand(-60,60),glow:t0+i*gap+dur+4});
+  }
+  tint={side,kind:'add',t0};
+  return sleep((n*gap+dur)*1000+150).then(()=>n);
+}
+function remAnimated(side,n){
+  const pool=balls.filter(b=>b.state==='ground'&&!b.claim&&sideOf(b.x)===side).slice(0,n);
+  const t0=nowS(),gap=REDUCED?0:Math.min(0.02,0.6/n),dur=REDUCED?0.05:1.4;
+  pool.forEach((b,i)=>Object.assign(b,{state:'leave',t0:t0+i*gap,dur}));
+  tint={side,kind:'rem',t0};
+  return sleep((pool.length*gap+dur)*1000+150).then(()=>pool.length);
+}
+function animFx(){
+  const tn=nowS();
+  for(const b of balls) if(b.state==='enter'&&tn>=b.t0+b.dur){b.state='ground';}
+  if(balls.some(b=>b.state==='leave'&&tn>=b.t0+b.dur)) balls=balls.filter(b=>!(b.state==='leave'&&tn>=b.t0+b.dur));
+}
 function remN(side,n){
   let k=0;
   for(;k<n;k++){
@@ -484,7 +517,39 @@ function drawField(){
   ctx.beginPath();portrait?(ctx.moveTo(0,h/2),ctx.lineTo(w,h/2)):(ctx.moveTo(w/2,0),ctx.lineTo(w/2,h));ctx.stroke();ctx.setLineDash([]);
   const ball=col('--ball'),edge=col('--ballEdge'),shadow=col('--shadow');
   const drawBall=(sx,sy,r)=>{ctx.beginPath();ctx.arc(sx,sy,r*k,0,7);ctx.fillStyle=ball;ctx.fill();ctx.lineWidth=1.3*k;ctx.strokeStyle=edge;ctx.stroke();};
-  for(const b of balls) if(b.state==='ground'){const [sx,sy]=P(b.x,b.y);drawBall(sx,sy,5);}
+  const tn=nowS();
+  if(tint){
+    const a=1-(tn-tint.t0)/2.5;
+    if(a<=0) tint=null; else {
+      ctx.save();ctx.globalAlpha=0.22*a;ctx.fillStyle=col(tint.kind==='add'?'--hi':'--bad');
+      const left=tint.side==='R';
+      portrait?ctx.fillRect(0,left?0:h/2,w,h/2):ctx.fillRect(left?0:w/2,0,w/2,h);
+      ctx.restore();
+    }
+  }
+  const hi=col('--hi'),bad=col('--bad');
+  for(const b of balls){
+    if(b.state==='ground'){
+      const [sx,sy]=P(b.x,b.y);
+      if(b.glow&&tn<b.glow){ctx.save();ctx.globalAlpha=Math.min(1,(b.glow-tn)/1.5);ctx.beginPath();ctx.arc(sx,sy,9*k,0,7);ctx.lineWidth=3*k;ctx.strokeStyle=hi;ctx.stroke();ctx.restore();}
+      drawBall(sx,sy,5);
+    } else if(b.state==='enter'){
+      const u=(tn-b.t0)/b.dur; if(u<0) continue;
+      const e=1-(1-Math.min(1,u))**2;
+      const [sx,sy]=P(b.sx+(b.x-b.sx)*e,b.sy+(b.y-b.sy)*e);
+      ctx.beginPath();ctx.arc(sx,sy,9*k,0,7);ctx.lineWidth=3*k;ctx.strokeStyle=hi;ctx.stroke();
+      drawBall(sx,sy,5.5);
+    } else if(b.state==='leave'){
+      const u=Math.max(0,(tn-b.t0)/b.dur);
+      const [sx,sy]=P(b.x,b.y);
+      const fade=u<0.45?1:Math.max(0,1-(u-0.45)/0.55);
+      ctx.save();ctx.globalAlpha=fade;
+      const lift=u<0.45?0:(u-0.45)*30*k;
+      ctx.beginPath();ctx.arc(sx,sy-lift,(8+2*Math.sin(u*25))*k*fade+1,0,7);ctx.lineWidth=2.5*k;ctx.strokeStyle=bad;ctx.stroke();
+      drawBall(sx,sy-lift,5*fade+0.01);
+      ctx.restore();
+    }
+  }
   const cR=col('--react'),cP=col('--prod'),surf=col('--surface');
   for(const p of players){
     const [sx,sy]=P(p.x,p.y);
@@ -509,13 +574,15 @@ function drawChart(){
   if(canvas.offsetParent===null) return;
   const {ctx,w,h,dpr}=fitCanvas(canvas);
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  const W2=w/dpr,H2=h/dpr,L=38,R=12,T=8,B=34;
+  const hasChange=log.some(e=>e.kind==='change');
+  const W2=w/dpr,H2=h/dpr,L=38,R=12,T=hasChange?24:8,B=34;
   ctx.clearRect(0,0,W2,H2);
   const lastX=log.length?log[log.length-1].x:0;
-  const xMax=Math.max(6,lastX+1);
+  const xMin=Math.min(0,...log.map(e=>e.x));
+  const xMax=Math.max(xMin+6,lastX+1);
   const yMaxIn=Math.max(cfg.total,...log.map(e=>Math.max(e.R,e.P)));
   const yStep=niceStep(yMaxIn,4), yMax=Math.ceil(yMaxIn/yStep)*yStep;
-  const X=v=>L+(v/xMax)*(W2-L-R), Y=v=>T+(1-v/yMax)*(H2-T-B);
+  const X=v=>L+((v-xMin)/(xMax-xMin))*(W2-L-R), Y=v=>T+(1-v/yMax)*(H2-T-B);
   ctx.font='11px "JetBrains Mono", ui-monospace, monospace';ctx.fillStyle=col('--muted');
   ctx.strokeStyle=col('--line');ctx.lineWidth=1;
   ctx.textAlign='right';ctx.textBaseline='middle';
@@ -523,10 +590,20 @@ function drawChart(){
     const y=Math.round(Y(v))+.5;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W2-R,y);ctx.stroke();
     ctx.fillText(String(Math.round(v)),L-6,y);
   }
-  const xStep=Math.max(1,niceStep(xMax,8));
+  const xStep=Math.max(1,niceStep(xMax-xMin,8));
   ctx.textAlign='center';ctx.textBaseline='top';
-  for(let v=0;v<=xMax+1e-9;v+=xStep) ctx.fillText(String(Math.round(v)),X(v),H2-B+5);
-  ctx.fillText('round',L+(W2-L-R)/2,H2-14);
+  for(let v=Math.ceil(xMin/xStep)*xStep;v<=xMax+1e-9;v+=xStep) ctx.fillText(v<0?'−'+Math.abs(Math.round(v)):String(Math.round(v)),X(v),H2-B+5);
+  ctx.fillText(xMin<0?'round (negative = before the change)':'round',L+(W2-L-R)/2,H2-14);
+  /* each change: dashed line and its label at the top */
+  for(const e of log) if(e.kind==='change'){
+    const x=Math.round(X(e.x))+.5;
+    ctx.save();ctx.strokeStyle=col('--ink');ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(x,T-4);ctx.lineTo(x,H2-B);ctx.stroke();ctx.restore();
+    ctx.save();ctx.font='700 12px "Atkinson Hyperlegible", system-ui, sans-serif';ctx.fillStyle=col('--ink');ctx.textBaseline='top';
+    const tw=ctx.measureText(e.label).width;
+    ctx.textAlign=x+6+tw>W2-R?'right':'left';
+    ctx.fillText(e.label,ctx.textAlign==='left'?x+6:x-6,4);ctx.restore();
+  }
   [['R',col('--react')],['P',col('--prod')]].forEach(([key,c])=>{
     ctx.strokeStyle=c;ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();
     log.forEach((e,j)=>{const x=X(e.x),y=Y(e[key]);j?ctx.lineTo(x,y):ctx.moveTo(x,y);});
@@ -555,6 +632,7 @@ function frame(now){
   } else {
     for(const p of players){p.ph+=real*6; if(p.state==='idle'&&!p.ball) moveToward(p,p.hx+Math.sin(p.ph*0.3)*12,p.hy+Math.cos(p.ph*0.23)*12,40,real);}
   }
+  animFx();
   drawField();
   updateBoard();
   requestAnimationFrame(frame);
@@ -611,9 +689,13 @@ function scene(tag,title,body){
 }
 function status(s){$('runStatus').textContent=s;}
 let bannerTimer=null;
-function banner(text){
+function banner(text,side,kind){
   const b=$('banner');b.textContent=text;b.hidden=false;
-  clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.hidden=true,1800);
+  b.className='banner'+(kind?' '+kind:'');
+  const f=$('field'),portrait=f.clientHeight>f.clientWidth;
+  const pos=side?(side==='R'?'25%':'75%'):'50%';
+  b.style.left=portrait?'50%':pos;b.style.top=portrait?pos:'50%';b.style.maxWidth=portrait||!side?'90%':'46%';
+  clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.hidden=true,3000);
 }
 function showK(on){$('kPanel').hidden=!on;drawChart();}
 
@@ -641,12 +723,18 @@ async function settle(o){
       b.x=from==='R'?rand(MID+28,W-M-12):rand(M+12,MID-28); b.y=rand(M+12,H-M-12);
     }
   }
-  speed=BASE_SPEED;restartLog();status('At equilibrium.');
+  /* keep the warm-up on the graph as the "before" stretch: rounds −3…0, with round 0 = the evened-out start */
+  for(const e of log){e.n-=3;e.x-=3;}
+  const c=counts(),last=log[log.length-1];last.R=c.R;last.P=c.P;
+  roundN=0;
+  speed=BASE_SPEED;drawChart();renderLog();status('At equilibrium.');
 }
-function dump(side,n,verb){
-  const k=verb==='add'?addN(side,n):remN(side,n);
-  const label=`${verb==='add'?'+':'−'}${k} ${verb==='add'?'to':'from'} ${sideWords[side]}`;
-  logChange(label);banner(label);
+async function dump(side,n,verb,caption){
+  const plan=`${verb==='add'?'+':'−'}${n} ${verb==='add'?'to':'from'} ${sideWords[side]}`;
+  banner(caption||plan,side,verb==='add'?'add':'rem');
+  status(`Watch the ${sideWords[side]}: ${verb==='add'?`adding ${n} snowballs`:`taking away ${n} snowballs`}.`);
+  const k=verb==='add'?await addAnimated(side,n):await remAnimated(side,n);
+  logChange(`${verb==='add'?'+':'−'}${k} ${verb==='add'?'to':'from'} ${sideWords[side]}`);
   return k;
 }
 
@@ -850,8 +938,10 @@ async function level2(){
     await settle({nR:10,nP:10,total:80,start:'S'});
     const pre=lastRound();
     let moved=0;
-    if(d.kind==='water'){logChange('+ water');banner('+ water (not a snowball)');}
-    else moved=dump(d.side,d.n,d.kind==='add'?'add':'remove');
+    $('field').scrollIntoView({block:'center',behavior:REDUCED?'auto':'smooth'});
+    await sleep(600);
+    if(d.kind==='water'){banner('+ water (not a snowball)');await sleep(1200);logChange('+ water');}
+    else moved=await dump(d.side,d.n,d.kind==='add'?'add':'remove');
     const just=log[log.length-1];
     status(`Just after: ${sideWords.R} ${just.R}, ${sideWords.P} ${just.P}.`);
     setCtx(ctxHtml+` Right after the change: reactant side <b class="r">${just.R}</b>, product side <b class="p">${just.P}</b>.`);
@@ -1138,9 +1228,10 @@ async function level4(){
       prompt:`Make your calls for <b>${c.who.toLowerCase()}</b>.`,
       rows:c.rows.map(r=>({label:r.label,opts:r.opts,correct:r.correct,skill:'body',learn:`${c.who}: ${r.why}`,inline:r.inline!==false})),
       afterLock:async()=>{
-        await new Promise(r=>setTimeout(r,250));
-        dump(c.dump[0],c.dump[2],c.dump[1]==='add'?'add':'remove');banner(c.caption);
-        await new Promise(r=>setTimeout(r,900));
+        $('field').scrollIntoView({block:'center',behavior:REDUCED?'auto':'smooth'});
+        await sleep(700);
+        await dump(c.dump[0],c.dump[2],c.dump[1]==='add'?'add':'remove',c.caption);
+        await sleep(700);
         await run(4,`${c.caption}. Running…`);
       },
       feedback:p=>{
