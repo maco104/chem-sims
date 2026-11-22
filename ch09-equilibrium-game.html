@@ -16,7 +16,7 @@
   number checked against the student's own run). Nothing is saved or sent.
   Core loop: read the situation, lock in a call BEFORE the fight runs, watch the run, get feedback that says why.
   Level 1 Opening whistle (Match 1)   where it levels off, both sides still throwing, why the counts stop changing
-  Level 2 Dump truck (Match 2)        five disturbances in random order (+/- each side, add water): call the shift,
+  Level 2 Add and take away (Match 2) five changes in random order (+/- each side, add water): call the shift,
                                       then explain it with throw rates
   Level 3 Uneven teams (4 v 16, 16 v 4)  which side ends with more, equal rates with unequal amounts, what K means
   Level 4 In the body                 pneumonia, panic attack, opioid overdose, kidney failure, ketoacidosis
@@ -112,6 +112,8 @@ button.ghost{font-weight:400;font-size:14px}
 
 /* the call: options are raised and tappable until locked; locked options go flat */
 .call{border-top:4px solid var(--ink)}
+.ctx{background:var(--bg);border-radius:8px;padding:8px 12px;font-size:14px;line-height:1.45}
+.ctx .lbl{display:block;margin-bottom:2px}
 .call .prompt{font-size:17px;font-weight:700}
 .qrow{display:flex;flex-direction:column;gap:6px}
 .qrow+.qrow{border-top:1px dashed var(--line);padding-top:10px}
@@ -149,7 +151,7 @@ button.ghost{font-weight:400;font-size:14px}
 .fb.bad{border-color:var(--bad);background:var(--badbg)} .fb.bad .ic{background:var(--bad)} .fb.bad .verdict{color:var(--bad)}
 .lesson{border-left:5px solid var(--ink);background:var(--bg);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 
-/* dump tray in level 2 */
+/* progress chips in levels 2 and 4 */
 .tray{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}
 .chip.now{border-color:var(--ink);color:var(--ink);font-weight:700}
@@ -214,7 +216,7 @@ button.ghost{font-weight:400;font-size:14px}
     </div>
     <ol class="track" id="track" aria-label="Levels">
       <li data-state="next"><span class="pip">1</span><span class="nm">Opening whistle</span></li>
-      <li data-state="next"><span class="pip">2</span><span class="nm">Dump truck</span></li>
+      <li data-state="next"><span class="pip">2</span><span class="nm">Add and take away</span></li>
       <li data-state="next"><span class="pip">3</span><span class="nm">Uneven teams</span></li>
       <li data-state="next"><span class="pip">4</span><span class="nm">In the body</span></li>
     </ol>
@@ -305,7 +307,7 @@ button.ghost{font-weight:400;font-size:14px}
     </div>
     <div class="startrow">
       <button class="primary" id="againBtn">Play again</button>
-      <span class="note">Dumps in Level 2 come in a new order each time, and every run of the fight is a little different.</span>
+      <span class="note">The changes in Level 2 come in a new order each time, and every run of the fight is a little different.</span>
     </div>
   </section>
   <p class="sr" aria-live="polite" id="announce"></p>
@@ -595,6 +597,9 @@ function setTrack(i){
     li.setAttribute('aria-current',j===i?'step':'false');
   });
 }
+/* short restatement of the situation, repeated at the top of each question so it stays in view when scrolled */
+let ctxHtml='';
+function setCtx(html){ctxHtml=html;}
 function scene(tag,title,body){
   $('sceneTag').textContent=tag;$('sceneTitle').textContent=title;$('sceneBody').innerHTML=body;
 }
@@ -617,7 +622,7 @@ async function run(n,label){
 }
 $('skip').onclick=()=>{speed=FAST_SPEED;$('skip').hidden=true;status('Skipping ahead…');};
 /* bring a fight to equilibrium quickly, then count from round 0 again. With even teams the warm-up can end a
-   few snowballs off 40/40 by chance, which would make "about half of the dump moves back" untrue for that run, so
+   few snowballs off 40/40 by chance, which would make "about half of the added snowballs move back" untrue for that run, so
    the counts are evened out after the warm-up (only resting snowballs are moved). */
 async function settle(o){
   setup(o);
@@ -655,6 +660,7 @@ function fbBox(state,head,body){
 function call(q){
   return new Promise(resolve=>{
     const box=$('call');box.innerHTML='';
+    if(ctxHtml) box.append(el('div','ctx',ctxHtml));
     box.append(el('p','prompt',q.prompt));
     const picks=q.rows.map(()=>null);
     let locked=false;
@@ -755,6 +761,7 @@ const near=(v,target,okTol,partTol)=>Math.abs(v-target)<=okTol?'ok':Math.abs(v-t
 async function level1(){
   setTrack(0);setNames(false);showK(false);$('tray').innerHTML='';
   setup({nR:10,nP:10,total:80,start:'R'});status('');
+  setCtx('<span class="lbl">Match 1</span>Even teams, 10 throwers each. All 80 snowballs started on the <b class="r">reactant side</b>.');
   scene('Level 1 · Opening whistle','Match 1: even teams',
     `<p>Ten throwers on each side. All 80 snowballs start on the <b class="r">reactant side</b>. Nobody has thrown yet.</p>`);
   await card(`<h3>Your goal</h3><p>Call where Match 1 ends up, and what the teams are doing once the counts stop changing.</p>`,'Let’s go');
@@ -806,10 +813,10 @@ async function level1(){
   await card(`<h3>Level 1 wrap-up</h3><p><b>Equilibrium</b> is when the counts stop changing because each side throws snowballs across as fast as it receives them. The throwing never stops: the <b>forward rate equals the reverse rate</b>.</p>`,'On to Level 2');
 }
 
-/* ---------------------------------------- Level 2: Dump truck ---------------------------------------- */
+/* ---------------------------------------- Level 2: Add and take away ---------------------------------------- */
 const DUMPS={
-  addP:{kind:'add',side:'P',n:50,correct:'L',text:'Dump 50 extra snowballs onto the <b class="p">product side</b>.'},
-  addR:{kind:'add',side:'R',n:50,correct:'R',text:'Dump 50 extra snowballs onto the <b class="r">reactant side</b>.'},
+  addP:{kind:'add',side:'P',n:50,correct:'L',text:'Add 50 snowballs to the <b class="p">product side</b>.'},
+  addR:{kind:'add',side:'R',n:50,correct:'R',text:'Add 50 snowballs to the <b class="r">reactant side</b>.'},
   remP:{kind:'rem',side:'P',n:30,correct:'R',text:'Take 30 snowballs away from the <b class="p">product side</b>.'},
   remR:{kind:'rem',side:'R',n:30,correct:'L',text:'Take 30 snowballs away from the <b class="r">reactant side</b>.'},
   water:{kind:'water',correct:'N',text:'Pour more water onto the field. Water is the liquid all around, not a snowball.'}
@@ -823,14 +830,16 @@ async function level2(){
   setTrack(1);setNames(false);showK(false);
   const order=['addP',...shuffle(['addR','remP','remR','water'])];
   const tray=$('tray');tray.innerHTML='';
-  const chips=order.map((k,i)=>{const c=el('span','chip',`Dump ${i+1}`);tray.append(c);return c;});
-  scene('Level 2 · Dump truck','Disturb the equilibrium','<p>Each dump starts from an even fight sitting at equilibrium, near 40 and 40.</p>');
-  await card(`<h3>Your goal</h3><p>Five dumps, in a random order. For each one, call which way the fight will <b>shift</b> before it runs, then explain why it went that way.</p><p>If snowballs move overall toward the reactant side, the equilibrium has shifted <b>left</b>. Toward the product side is a shift <b>right</b>.</p>`,'First dump');
+  const chips=order.map((k,i)=>{const c=el('span','chip',`Change ${i+1}`);tray.append(c);return c;});
+  scene('Level 2 · Add and take away','Change the equilibrium','<p>Each change starts from an even fight (10 v 10) sitting at equilibrium, at 40 and 40.</p>');
+  setCtx('');
+  await card(`<h3>Your goal</h3><p>Five changes, in a random order: add snowballs to a side, take some away, or add water. For each one, call which way the fight will <b>shift</b> before it runs, then explain why it went that way.</p><p>If snowballs move overall toward the reactant side, the equilibrium has shifted <b>left</b>. Toward the product side is a shift <b>right</b>.</p>`,'First change');
   let askedHalf=false;
   for(let i=0;i<order.length;i++){
     const d=DUMPS[order[i]];
     chips[i].classList.add('now');
-    scene(`Level 2 · Dump ${i+1} of ${order.length}`,'Disturb the equilibrium',`<p>The fight is at equilibrium. Then: ${d.text}</p>`);
+    scene(`Level 2 · Change ${i+1} of ${order.length}`,'Change the equilibrium',`<p>Even teams (10 v 10), sitting at equilibrium at 40 and 40. Then: ${d.text}</p>`);
+    setCtx(`<span class="lbl">Change ${i+1} of ${order.length}</span>Even teams at 40 and 40. Then: ${d.text}`);
     $('call').innerHTML='';
     await settle({nR:10,nP:10,total:80,start:'S'});
     const pre=lastRound();
@@ -839,6 +848,7 @@ async function level2(){
     else moved=dump(d.side,d.n,d.kind==='add'?'add':'remove');
     const just=log[log.length-1];
     status(`Just after: ${sideWords.R} ${just.R}, ${sideWords.P} ${just.P}.`);
+    setCtx(ctxHtml+` Right after the change: reactant side <b class="r">${just.R}</b>, product side <b class="p">${just.P}</b>.`);
     const rule=d.kind==='add'?`Add to one side, and the equilibrium shifts <b>away</b> from that side.`:
       d.kind==='rem'?`Remove from one side, and the equilibrium shifts <b>toward</b> that side, partly refilling it.`:
       `Water is not a snowball. There is so much of it that adding more doesn’t change how concentrated it is, so nothing shifts.`;
@@ -882,7 +892,7 @@ async function level2(){
         rows:[{skill:'why',correct:'ok',shuffle:true,learn:'A shift happens because one side’s throw rate changes, so more goes one way than the other until the rates match again.',opts}],
         feedback:p=>{
           const ok=p[0]==='ok';
-          const evid=`Before the dump the ${S} threw about ${f1(pR)}/s. In the first round after it, ${f1(sR)}/s, against ${f1(oR)}/s from the ${O}.`;
+          const evid=`Before the change the ${S} threw about ${f1(pR)}/s. In the first round after it, ${f1(sR)}/s, against ${f1(oR)}/s from the ${O}.`;
           const head=ok?`The ${S}’s rate ${d.kind==='add'?'jumped':'dropped'}, and the counts moved until the rates matched.`:
             p[0]==='eq'?'They ended near equal only because these teams are even. In Level 3, uneven teams settle far from equal. The cause is the throw rates.':
             p[0]==='stop'?`The ${O} never stopped. What changed was the ${S}’s rate.`:
@@ -896,22 +906,22 @@ async function level2(){
       askedHalf=true;
       const e=lastRound(),gain=e.R-just.R;
       await call({
-        prompt:`Use the round log: how many more snowballs does the reactant side have now (round 5) than right after the dump (the “+50 to product side” row)?`,
-        rows:[{type:'num',skill:'why',unit:'snowballs',learn:'The fight undoes part of a disturbance, not all of it: with even teams, about half of the 50 dumped snowballs move back.',
+        prompt:`Use the round log: how many more snowballs does the reactant side have now (round 5) than right after you added 50 (the “+50 to product side” row)?`,
+        rows:[{type:'num',skill:'why',unit:'snowballs',learn:'The fight undoes part of a change, not all of it: with even teams, about half of the 50 added snowballs move back.',
           check:v=>{const st=Math.abs(v-gain)<0.5?'ok':Math.abs(v-gain)<=3?'part':'bad';
             return {state:st,note:`${e.R} − ${just.R} = ${gain}.`};}}],
         feedback:()=>{
           const tot=e.R+e.P,target=Math.round(tot/2),need=target-just.R;
-          const head=gain>=need-6&&gain<=need+6?`${gain} of the 50 dumped snowballs moved to the reactant side: about half.`:
-            `${gain} of the 50 dumped snowballs moved to the reactant side, a little ${gain<need?'under':'over'} half this time: the counts wobble by a few snowballs from round to round.`;
-          return {head,body:`With even teams the fight heads for half of ${tot} on each side, about ${target} and ${target}. Getting there from ${just.R} takes about ${need} of the 50 back, roughly half. So the fight undoes part of the dump, not all of it: after five rounds the product side is at ${e.P}, still above its ${pre.P} before the dump.`};
+          const head=gain>=need-6&&gain<=need+6?`${gain} of the 50 added snowballs moved to the reactant side: about half.`:
+            `${gain} of the 50 added snowballs moved to the reactant side, a little ${gain<need?'under':'over'} half this time: the counts wobble by a few snowballs from round to round.`;
+          return {head,body:`With even teams the fight heads for half of ${tot} on each side, about ${target} and ${target}. Getting there from ${just.R} takes about ${need} of the 50 back, roughly half. So the fight undoes part of the change, not all of it: after five rounds the product side is at ${e.P}, still above its ${pre.P} before you added 50.`};
         }});
     }
     const dirOk=r1.state==='ok';
     const st=d.kind==='water'?(dirOk?'ok':'bad'):(dirOk&&whyOk?'ok':(dirOk||whyOk)?'part':'bad');
     chips[i].className='chip '+st;
-    chips[i].textContent=`Dump ${i+1} ${{ok:'✓',part:'◐',bad:'✕'}[st]}`;
-    chips[i].setAttribute('aria-label',`Dump ${i+1}: ${{ok:'right',part:'partly right',bad:'not right'}[st]}`);
+    chips[i].textContent=`Change ${i+1} ${{ok:'✓',part:'◐',bad:'✕'}[st]}`;
+    chips[i].setAttribute('aria-label',`Change ${i+1}: ${{ok:'right',part:'partly right',bad:'not right'}[st]}`);
   }
   await card(`<h3>Level 2 wrap-up: Le Châtelier’s principle</h3><p>When a system at equilibrium is disturbed, it shifts in the direction that <b>partly undoes</b> the disturbance. Add something, and it shifts <b>away</b> from the side you added to. Remove something, and it shifts <b>toward</b> the side you removed from.</p><p>The reason is always the rates: the side you changed throws faster or slower until the two rates match again.</p>`,'On to Level 3');
 }
@@ -927,6 +937,7 @@ function addK(label){
 async function level3(){
   setTrack(2);setNames(false);$('tray').innerHTML='';kRows.length=0;$('kBody').innerHTML='';showK(false);
   setup({nR:4,nP:16,total:80,start:'R'});status('');
+  setCtx('<span class="lbl">Match 3: 4 v 16</span><b class="r">4 throwers</b> on the reactant side, <b class="p">16 throwers</b> on the product side. All 80 snowballs started on the reactant side.');
   scene('Level 3 · Uneven teams','Match 3: 4 v 16',`<p>Now one direction is easier than the other. <b class="r">4 throwers</b> on the reactant side, <b class="p">16 throwers</b> on the product side. All 80 snowballs start on the reactant side.</p>`);
   await card(`<h3>Your goal</h3><p>Call where uneven teams level off, check the throw rates, and work out what the equilibrium constant <b>K</b> tells you.</p>`,'Let’s go');
 
@@ -980,6 +991,7 @@ async function level3(){
   const K1=addK('4 v 16');showK(true);
 
   setup({nR:16,nP:4,total:80,start:'R'});status('');
+  setCtx('<span class="lbl">Match 4: 16 v 4</span><b class="r">16 throwers</b> on the reactant side, <b class="p">4 throwers</b> on the product side. All 80 snowballs started on the reactant side.');
   scene('Level 3 · Uneven teams','Match 4: 16 v 4',`<p>Swap them: <b class="r">16 throwers</b> on the reactant side, <b class="p">4 throwers</b> on the product side. 80 snowballs start on the reactant side.</p>`);
   await call({
     prompt:'Call it: which side ends up with more?',
@@ -1021,7 +1033,7 @@ async function level3(){
     }});
 
   await call({
-    prompt:'In Level 2, dumping 50 snowballs into an even match moved the counts from about 40 and 40 to about 65 and 65. Did that change K?',
+    prompt:'In Level 2, adding 50 snowballs to an even match moved the counts from about 40 and 40 to about 65 and 65. Did that change K?',
     rows:[{skill:'k',correct:'a',learn:'Adding or removing snowballs shifts the equilibrium but does not change K. Only changing the teams changed K.',opts:[
       {id:'a',t:'No, K stayed about 1'},
       {id:'b',t:'Yes, K went up because there are more snowballs'},
@@ -1065,7 +1077,7 @@ const CASES=[
     {label:'CO₂ in the blood',opts:UPDOWN,correct:'down',why:'CO₂ is breathed out faster than the cells make it.'},
     {label:'The equilibria shift',opts:LR,correct:'L',why:'Removing a reactant shifts toward it: H⁺ and HCO₃⁻ recombine to H₂CO₃, which breaks down to CO₂ and water.'},
     {label:'The blood becomes',opts:ACID,correct:'less',why:'That shift uses up H⁺, so the blood is less acidic.'}]},
-  {who:'Opioid overdose',what:'The drug slows the breathing centre of the brain. Breathing is slow and shallow.',
+  {who:'Opioid overdose',what:'The drug slows the breathing center of the brain. Breathing is slow and shallow.',
    dump:['R','add',30],caption:'CO₂ builds up',
    rows:[
     {label:'CO₂ in the blood',opts:UPDOWN,correct:'up',why:'Slow, shallow breathing removes less CO₂, so it builds up, just like pneumonia.'},
@@ -1089,6 +1101,7 @@ async function level4(){
   const tray=$('tray');tray.innerHTML='';
   const chips=CASES.map(c=>{const x=el('span','chip',c.who);tray.append(x);return x;});
   const eq=`<p class="eqn"><span>CO₂(g) + H₂O(l) ⇌</span> <span>H₂CO₃(aq) ⇌</span> <span>H⁺(aq) + HCO₃⁻(aq)</span></p>`;
+  setCtx('<span class="lbl">The reaction</span>CO₂(g) + H₂O(l) ⇌ H₂CO₃(aq). Reactant side = CO₂, product side = H₂CO₃.');
   scene('Level 4 · In the body','Same fight, real molecules',eq+`<p>The reactant side is now <b class="r">CO₂</b> and the product side is <b class="p">H₂CO₃</b>. H⁺ follows H₂CO₃: more H₂CO₃ means more H⁺, and more H⁺ means more acidic blood. Breathing out removes CO₂.</p>`);
   await call({
     prompt:'First, translate the snowball moves to the real reaction, CO₂(g) + H₂O(l) ⇌ H₂CO₃(aq). Which way does each change shift it?',
@@ -1109,6 +1122,7 @@ async function level4(){
   for(let i=0;i<CASES.length;i++){
     const c=CASES[i];
     chips[i].classList.add('now');
+    setCtx(`<span class="lbl">Patient ${i+1} of ${CASES.length}: ${c.who}</span>${c.what}<br>CO₂ + H₂O ⇌ H₂CO₃ ⇌ H⁺ + HCO₃⁻ · more H⁺ = more acidic · breathing out removes CO₂`);
     scene(`Level 4 · Patient ${i+1} of ${CASES.length}`,'Same fight, real molecules',
       eq+`<div class="chart-card"><span class="lbl">Patient chart</span><span class="who">${c.who}</span><span>${c.what}</span></div>`);
     $('call').innerHTML='';
